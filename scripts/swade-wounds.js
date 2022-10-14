@@ -47,9 +47,9 @@ Hooks.on('ready', function () {
     }
 });
 
-async function soakPrompt({ target, damage, ap, woundsInflicted, statusToApply }) {
-    const tokenActorUUID = target.actor.uuid;
+async function soakPrompt({ tokenActorUUID, damage, ap, woundsInflicted, statusToApply }) {
     let actor;
+    const target = game.scenes.active.tokens.find((t) => t.actor.uuid === tokenActorUUID);
     const documentObject = await fromUuid(tokenActorUUID);
     const woundsText = `${woundsInflicted} ${woundsInflicted > 1 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
     if (documentObject.constructor.name === 'TokenDocument') {
@@ -64,10 +64,16 @@ async function soakPrompt({ target, damage, ap, woundsInflicted, statusToApply }
     } else {
         message = game.i18n.format("SWWC.noSignificantDamage", { name: actor.name, wounds: woundsText });
         await ChatMessage.create({ content: message });
-
     }
+    const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
+        return game.users.find((u) => u.id === id && !u.isGM);
+    });
     const isOwner = actor.ownership[game.userId] === 3;
-    if (isOwner && statusToApply !== "none") {
+    const isGM = game.user.isGM;
+    const forTheGM = isGM && playerOwners.length === 0;
+    const forThePlayer = isOwner && !isGM;
+    const forThisUser = forTheGM || forThePlayer;
+    if (forThisUser && statusToApply !== "none") {
         if (statusToApply === "wounded") {
             new Dialog({
                 title: game.i18n.format("SWWC.soakTitle", { name: actor.name }),
@@ -275,9 +281,14 @@ async function calcWounds(targets, damage, ap) {
         const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
             return game.users.find((u) => u.id === id && !u.isGM);
         });
-        if (game.user.isGM && playerOwners.length === 0) {
+        const isOwner = target.actor.ownership[game.userId] === 3;
+        const isGM = game.user.isGM;
+        const sendToGM = isGM && playerOwners.length === 0;
+        const sendToPlayer = !isGM && isOwner;
+        const noEmit = sendToGM || sendToPlayer;
+        if (noEmit) {
             await soakPrompt({
-                target: target,
+                tokenActorUUID: target.actor.uuid,
                 damage: damage,
                 ap: ap,
                 woundsInflicted: woundsInflicted,
@@ -285,7 +296,7 @@ async function calcWounds(targets, damage, ap) {
             });
         } else {
             game.socket.emit(`module.${MODULE_TITLE}`, {
-                target: target,
+                tokenActorUUID: target.actor.uuid,
                 damage: damage,
                 ap: ap,
                 woundsInflicted: woundsInflicted,
@@ -350,7 +361,8 @@ class WoundsCalculator {
 }
 
 Hooks.on('renderChatMessage', function (data) {
-    if (data.rolls.length && data.flavor.includes('Damage')) {
+    const sameUser = data.user.id === game.userId
+    if (sameUser && data.rolls.length && data.flavor.includes('Damage')) {
         const targets = data.user.targets;
         const damage = data.rolls[0].total;
         const flavor = data.flavor;
