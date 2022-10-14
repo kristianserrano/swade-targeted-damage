@@ -57,6 +57,9 @@ async function soakPrompt({ tokenActorUUID, damage, ap, woundsInflicted, statusT
     } else if (documentObject.constructor.name === 'SwadeActor') {
         actor = documentObject;
     }
+    const playerOwners = Object.keys(actor.ownership).filter((id) => {
+        return game.users.find((u) => u.id === id && !u.isGM);
+    });
     const isOwner = actor.ownership[game.userId] === 3;
     const isGM = game.user.isGM;
     const forTheGM = isGM && playerOwners.length === 0;
