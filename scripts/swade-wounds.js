@@ -104,7 +104,7 @@ async function soakPrompt({ tokenActorUUID, damage, ap, woundsInflicted, statusT
                             const totalWounds = existingWounds + woundsInflicted;
                             const newWoundsValue = totalWounds < maxWounds ? totalWounds : maxWounds;
                             let message = game.i18n.format("SWWC.woundsTaken", { name: actor.name, wounds: woundsText });
-                            await actor.updateSource({ 'system.wounds.value': newWoundsValue });
+                            await actor.update({ 'system.wounds.value': newWoundsValue });
                             if (totalWounds > maxWounds) {
                                 message = await applyIncapacitated(actor);
                             } else {
@@ -178,13 +178,13 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
                     callback: async () => {
                         if (statusToApply === 'shaken') {
                             if (actor.system.status.isShaken) {
-                                await actor.updateSource({ 'system.wounds.value': newWoundsValue });
+                                await actor.update({ 'system.wounds.value': newWoundsValue });
                             }
                             await applyShaken(actor);
                             message = game.i18n.format("SWWC.isShaken", { name: actor.name });
                         }
                         if (statusToApply === 'wounded') {
-                            await actor.updateSource({ 'system.wounds.value': newWoundsValue });
+                            await actor.update({ 'system.wounds.value': newWoundsValue });
                             if (totalWounds > maxWounds) {
                                 message = await applyIncapacitated(actor);
                             } else {
