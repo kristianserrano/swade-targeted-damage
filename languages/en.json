@@ -9,6 +9,8 @@
     "SWWC.rerollSoakBenny": "Spend a Benny to Reroll",
     "SWWC.rerollSoakFree": "Reroll for Free",
     "SWWC.takeWounds": "Take {wounds}",
+    "SWWC.adjustDamage": "Adjust Damage",
+    "SWWC.noSignificantDamage": "<p><strong>{name}</strong> suffers no significant damage.</p>",
     "SWWC.soakedAll": "<p><strong>{name}</strong> Soaked all Wounds and is not Shaken!</p>",
     "SWWC.incapacitated": "<p><strong>{name}</strong> is <strong>Incapacitated!</strong></p>",
     "SWWC.isShaken": "<p><strong>{name}</strong> is <strong>Shaken</strong>!</p>",

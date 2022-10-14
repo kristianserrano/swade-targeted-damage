@@ -47,7 +47,8 @@ Hooks.on('ready', function () {
     }
 });
 
-async function soakPrompt({ tokenActorUUID, woundsInflicted, statusToApply }) {
+async function soakPrompt({ target, damage, ap, woundsInflicted, statusToApply }) {
+    const tokenActorUUID = target.actor.uuid;
     let actor;
     const documentObject = await fromUuid(tokenActorUUID);
     const woundsText = `${woundsInflicted} ${woundsInflicted > 1 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
@@ -56,9 +57,15 @@ async function soakPrompt({ tokenActorUUID, woundsInflicted, statusToApply }) {
     } else if (documentObject.constructor.name === 'SwadeActor') {
         actor = documentObject;
     }
-    await ChatMessage.create({
-        content: game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText })
-    });
+    let message = '';
+    if (woundsInflicted > 0) {
+        message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText })
+        await ChatMessage.create({ content: message });
+    } else {
+        message = game.i18n.format("SWWC.noSignificantDamage", { name: actor.name, wounds: woundsText });
+        await ChatMessage.create({ content: message });
+
+    }
     const isOwner = actor.ownership[game.userId] === 3;
     if (isOwner && statusToApply !== "none") {
         if (statusToApply === "wounded") {
@@ -101,6 +108,12 @@ async function soakPrompt({ tokenActorUUID, woundsInflicted, statusToApply }) {
                             if (game.settings.get(MODULE_TITLE, "apply-gritty-damage")) {
                                 await promptGrittyDamage();
                             }
+                        }
+                    },
+                    adjust: {
+                        label: game.i18n.format("SWWC.adjustDamage"),
+                        callback: async () => {
+                            adjustDamage(target, damage, ap);
                         }
                     }
                 },
@@ -232,6 +245,80 @@ async function promptGrittyDamage() {
     }).render(true);
 }
 
+async function calcWounds(targets, damage, ap) {
+
+    const woundCap = game.settings.get(MODULE_TITLE, 'woundCap');
+
+    for (const target of targets) {
+        let { armor, value } = target.actor.system.stats.toughness;
+        if (target.actor.type === "vehicle") {
+            armor = Number(target.actor.system.toughness.armor);
+            value = Number(target.actor.system.toughness.total);
+        }
+        const apNeg = Math.min(ap, armor);
+        const newT = value - apNeg;
+        const excess = damage - newT;
+        let woundsInflicted = Math.floor(excess / 4);
+        if (woundCap && woundsInflicted > 4) {
+            woundsInflicted = 4;
+        }
+        let statusToApply = 'none';
+        if (excess >= 0 && excess < 4) {
+            statusToApply = "shaken";
+            if (target.actor.system.status.isShaken && woundsInflicted === 0) {
+                woundsInflicted = 1;
+                statusToApply = "wounded";
+            }
+        } else if (excess >= 4) {
+            statusToApply = "wounded";
+        }
+        const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
+            return game.users.find((u) => u.id === id && !u.isGM);
+        });
+        if (game.user.isGM && playerOwners.length === 0) {
+            await soakPrompt({
+                target: target,
+                damage: damage,
+                ap: ap,
+                woundsInflicted: woundsInflicted,
+                statusToApply: statusToApply
+            });
+        } else {
+            game.socket.emit(`module.${MODULE_TITLE}`, {
+                target: target,
+                damage: damage,
+                ap: ap,
+                woundsInflicted: woundsInflicted,
+                statusToApply: statusToApply
+            });
+        }
+    }
+}
+
+function adjustDamage(target, damage, ap) {
+    new Dialog({
+        title: game.i18n.format("SWWC.title"),
+        content: `
+                    <label for="damage">${game.i18n.format("SWADE.Dmg")}</label>
+                    <input type="number" id="damage" value="${damage}" autofocus>
+                    <label for="ap">${game.i18n.format("SWADE.Ap")}</label>
+                    <input type="number" id="ap" value="${ap}">
+                `,
+        buttons: {
+            calculate: {
+                label: game.i18n.format("SWWC.calculate"),
+                callback: async (html) => {
+                    const damage = Number(html.find("#damage")[0].value);
+                    const ap = Number(html.find("#ap")[0].value);
+                    calcWounds([target], damage, ap);
+                }
+            }
+        },
+        default: "calculate"
+    }, { classes: ["swade-app"] }).render(true);
+
+}
+
 class WoundsCalculator {
     static render() {
         const targets = game.user.targets;
@@ -248,49 +335,9 @@ class WoundsCalculator {
                     calculate: {
                         label: game.i18n.format("SWWC.calculate"),
                         callback: async (html) => {
-                            const woundCap = game.settings.get(MODULE_TITLE, 'woundCap');
                             const damage = Number(html.find("#damage")[0].value);
                             const ap = Number(html.find("#ap")[0].value);
-                            for (const target of targets) {
-                                let { armor, value } = target.actor.system.stats.toughness;
-                                if (target.actor.type === "vehicle") {
-                                    armor = Number(target.actor.system.toughness.armor);
-                                    value = Number(target.actor.system.toughness.total);
-                                }
-                                const apNeg = Math.min(ap, armor);
-                                const newT = value - apNeg;
-                                const excess = damage - newT;
-                                let woundsInflicted = Math.floor(excess / 4);
-                                if (woundCap && woundsInflicted > 4) {
-                                    woundsInflicted = 4;
-                                }
-                                let statusToApply = 'none';
-                                if (excess >= 0 && excess < 4) {
-                                    statusToApply = "shaken";
-                                    if (target.actor.system.status.isShaken && woundsInflicted === 0) {
-                                        woundsInflicted = 1;
-                                        statusToApply = "wounded";
-                                    }
-                                } else if (excess >= 4) {
-                                    statusToApply = "wounded";
-                                }
-                                const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
-                                    return game.users.find((u) => u.id === id && !u.isGM);
-                                });
-                                if (game.user.isGM && playerOwners.length === 0) {
-                                    await soakPrompt({
-                                        tokenActorUUID: target.actor.uuid,
-                                        woundsInflicted: woundsInflicted,
-                                        statusToApply: statusToApply
-                                    });
-                                } else {
-                                    game.socket.emit(`module.${MODULE_TITLE}`, {
-                                        tokenActorUUID: target.actor.uuid,
-                                        woundsInflicted: woundsInflicted,
-                                        statusToApply: statusToApply
-                                    });
-                                }
-                            }
+                            calcWounds(targets, damage, ap);
                         }
                     }
                 },
@@ -301,5 +348,17 @@ class WoundsCalculator {
         }
     }
 }
+
+Hooks.on('renderChatMessage', function (data) {
+    if (data.rolls.length && data.flavor.includes('Damage')) {
+        const targets = data.user.targets;
+        const damage = data.rolls[0].total;
+        const flavor = data.flavor;
+        const ap = parseInt(flavor.slice(flavor.indexOf('AP ') + 3));
+        if (targets.size) {
+            calcWounds(targets, damage, ap);
+        }
+    }
+});
 
 globalThis.WoundsCalculator = WoundsCalculator;
