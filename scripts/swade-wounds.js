@@ -57,23 +57,20 @@ async function soakPrompt({ tokenActorUUID, damage, ap, woundsInflicted, statusT
     } else if (documentObject.constructor.name === 'SwadeActor') {
         actor = documentObject;
     }
-    let message = '';
-    if (woundsInflicted > 0) {
-        message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText })
-        await ChatMessage.create({ content: message });
-    } else {
-        message = game.i18n.format("SWWC.noSignificantDamage", { name: actor.name, wounds: woundsText });
-        await ChatMessage.create({ content: message });
-    }
-    const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
-        return game.users.find((u) => u.id === id && !u.isGM);
-    });
     const isOwner = actor.ownership[game.userId] === 3;
     const isGM = game.user.isGM;
     const forTheGM = isGM && playerOwners.length === 0;
     const forThePlayer = isOwner && !isGM;
     const forThisUser = forTheGM || forThePlayer;
     if (forThisUser && statusToApply !== "none") {
+        let message = '';
+        if (woundsInflicted > 0) {
+            message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText });
+            await ChatMessage.create({ content: message });
+        } else {
+            message = game.i18n.format("SWWC.noSignificantDamage", { name: actor.name, wounds: woundsText });
+            await ChatMessage.create({ content: message });
+        }
         if (statusToApply === "wounded") {
             new Dialog({
                 title: game.i18n.format("SWWC.soakTitle", { name: actor.name }),
