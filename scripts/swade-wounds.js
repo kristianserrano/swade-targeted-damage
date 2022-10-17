@@ -1,6 +1,7 @@
 const MODULE_TITLE = "swade-wounds-calculator";
 
 Hooks.on('init', function () {
+    // Add setting for Wound Cap Setting Rule
     game.settings.register(MODULE_TITLE, "woundCap", {
         name: game.i18n.format("SWWC.UseWoundCap"),
         hint: game.i18n.format("SWWC.UseWoundCapHint"),
@@ -9,7 +10,7 @@ Hooks.on('init', function () {
         scope: "world",
         config: true
     });
-
+    // Add setting to enable Gritty Damage Setting Rule
     game.settings.register(MODULE_TITLE, "apply-gritty-damage", {
         name: game.i18n.format("SWWC.UseGrittyDamage"),
         hint: game.i18n.format("SWWC.UseGrittyDamageHint"),
@@ -22,10 +23,12 @@ Hooks.on('init', function () {
 });
 
 Hooks.on('ready', function () {
+    // Setup socket
     game.socket.on(`module.${MODULE_TITLE}`, adjustDamagePrompt);
 
+    // Create empty object for choices of Tables to select the Injury Table to use with Gritty Damage rules.
     const choices = {};
-
+    // If Gritty Damage is true, collect a list of Tables
     if (game.settings.get(MODULE_TITLE, 'apply-gritty-damage')) {
         // Setting to enable Gritty Damage
         for (const p of game.packs) {
@@ -48,15 +51,18 @@ Hooks.on('ready', function () {
     }
 });
 
+// Create string variable for the SWADE CSS class for App Windows.
 const appCssClasses = ["swade-app"];
 
+// Function for applying the Incapacitated Status Effect
 async function applyIncapacitated(actor) {
+    // Check if they're already Incapacitated; we don't need to add another instance if so.
     const isIncapacitated = actor.effects.find((e) => e.label === 'Incapacitated');
+    // If there is not such Status Effect, then apply it.
     if (isIncapacitated === undefined) {
         const data = CONFIG.SWADE.statusEffects.find((s) => s.id === 'incapacitated');
         await actor.toggleActiveEffect(data, { active: true });
     }
-    return game.i18n.format("SWWC.incapacitated", { name: actor.name });
 }
 
 async function promptGrittyDamage() {
@@ -96,35 +102,46 @@ async function applyShaken(actor) {
     }
 }
 
+// Function to roll for Soaking Wounds.
 async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, bestSoakAttempt = null) {
     // TODO: Figure out how to delay the results message until after the DSN roll animation completes.
+    // Roll Vigor and get the data.
     let vigorRoll = await actor.rollAttribute('vigor');
     let message;
+    // Calculate how many Wounds have been Soaked with the roll
     const woundsSoaked = Math.floor(vigorRoll.total / 4);
+    // Get the number of current Wounds the Actor has.
     const existingWounds = actor.system.wounds.value;
+    // Get the maximum amount of Wounds the Actor can suffer before Incapacitation.
     const maxWounds = actor.system.wounds.max;
+    // Calculate how many Wounds are remaining after Soaking.
     let woundsRemaining = woundsInflicted - woundsSoaked;
+    // If there are no remaining Wounds, output message that they Soaked all the Wounds.
     if (woundsRemaining <= 0) {
         message = game.i18n.format("SWWC.soakedAll", { name: actor.name });
         await ChatMessage.create({ content: message });
     } else {
+        // Otherwise, calculate how many Wounds the Actor now has.
         const totalWounds = existingWounds + woundsRemaining;
+        // Set the Wounds, but if it's beyond the maximum, set it to the maximum.
         const newWoundsValue = totalWounds < maxWounds ? totalWounds : maxWounds;
         if (bestSoakAttempt !== null && woundsRemaining > bestSoakAttempt) {
+            // If they already attempted to Soak, set Wounds remaining to whatever their best roll yielded so far.
             woundsRemaining = bestSoakAttempt;
         }
+        // Construct text for number of Wounds remaining.
         const woundsRemainingText = `${woundsRemaining} ${woundsRemaining > 1 || woundsRemaining === 0 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
-        const newWoundsValueText = `${newWoundsValue} ${newWoundsValue > 1 || newWoundsValue === 0 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
-        new Dialog({
+        // Open Dialog to reroll with a Benny, reroll for free, or accept the Wounds.
+        const rerollSoakDialog = new Dialog({
             title: game.i18n.format("SWWC.rerollSoakTitle", { name: actor.name }),
             content: game.i18n.format("SWWC.rerollSoakDmgPrompt", { name: actor.name, wounds: woundsRemainingText }),
             buttons: {
                 rerollBenny: {
                     label: game.i18n.format("SWWC.rerollSoakBenny"),
                     callback: async () => {
-                        if (actor.isWildcard && actor.bennies > 0) {
+                        if (actor.isWildcard) {
                             actor.spendBenny();
-                        } else if (!actor.isWildcard && game.user.isGM && game.user.bennies > 0) {
+                        } else if (!actor.isWildcard && game.user.isGM) {
                             game.user.spendBenny();
                         }
                         await attemptSoak(actor, woundsInflicted, statusToApply, woundsText, woundsRemaining);
@@ -139,39 +156,63 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
                 accept: {
                     label: game.i18n.format("SWWC.takeWounds", { wounds: woundsRemainingText }),
                     callback: async () => {
+                        // Construct text for the new Wounds value to be accepted (singular or plural Wounds).
+                        const newWoundsValueText = `${newWoundsValue} ${newWoundsValue > 1 || newWoundsValue === 0 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
                         if (statusToApply === 'shaken') {
-                            if (actor.system.status.isShaken) {
-                                await actor.update({ 'system.wounds.value': newWoundsValue });
-                            }
                             await applyShaken(actor);
-                            message = game.i18n.format("SWWC.isShaken", { name: actor.name });
+                            if (actor.system.status.isShaken) {
+                                statusToApply = 'wounded';
+                            } else {
+                                // Is Shaken
+                                message = game.i18n.format("SWWC.isShaken", { name: actor.name });
+                            }
                         }
+                        debugger
                         if (statusToApply === 'wounded') {
+                            // Update Wounds
                             await actor.update({ 'system.wounds.value': newWoundsValue });
+                            // Is Shaken with Wounds
+                            message = game.i18n.format("SWWC.isShakenWithWounds", { name: actor.name, wounds: newWoundsValueText });
+                            // Apply Status Effects: Incapacitated or Shaken.
                             if (totalWounds > maxWounds) {
-                                message = await applyIncapacitated(actor);
+                                await applyIncapacitated(actor);
+                                message = game.i18n.format("SWWC.incapacitated", { name: actor.name });
+                                await ChatMessage.create({ content: message });
                             } else {
                                 await applyShaken(actor);
+                                message = game.i18n.format("SWWC.shakenWithWounds", { name: actor.name, wounds: newWoundsValueText });
                             }
-                            message = game.i18n.format("SWWC.woundsTaken", { name: actor.name, wounds: newWoundsValueText });
+                            // Output Chat Message.
+                            await ChatMessage.create({ content: message });
+                            // If Gritty Damage is in play, prompt for Gritty Damage.
                             if (game.settings.get(MODULE_TITLE, "apply-gritty-damage")) {
                                 await promptGrittyDamage();
                             }
                         }
-                        await ChatMessage.create({ content: message });
                     }
                 },
             },
-            default: "rerollBenny"
-        }, { classes: appCssClasses }).render(true);
+            default: "accept"
+        }, { classes: appCssClasses })
+        // If no Bennies available, remove the option from the Dialog.
+        if ((actor.isWildcard && actor.bennies <= 0) || (!actor.isWildcard && game.user.isGM && game.user.bennies <= 0)) {
+            delete rerollSoakDialog.data.buttons.rerollBenny;
+        }
+        // Render the Dialog.
+        rerollSoakDialog.render(true);
     }
 }
 
+// Function for prompting to Soak.
 async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
+    // Set Wounds text for chat message
     const woundsText = `${woundsInflicted} ${woundsInflicted > 1 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
+    // Text for Wounds about to be taken.
     let message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText });
+    // Create the message
     await ChatMessage.create({ content: message });
-    new Dialog({
+    // Construct the Dialog for Soaking
+    const soakDialog = new Dialog({
         title: game.i18n.format("SWWC.soakTitle", { name: actor.name }),
         content: game.i18n.format("SWWC.soakDmgPrompt", { name: actor.name, wounds: woundsText }),
         buttons: {
@@ -199,7 +240,7 @@ async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
                     const maxWounds = actor.system.wounds.max;
                     const totalWounds = existingWounds + woundsInflicted;
                     const newWoundsValue = totalWounds < maxWounds ? totalWounds : maxWounds;
-                    let message = game.i18n.format("SWWC.woundsTaken", { name: actor.name, wounds: woundsText });
+                    let message = game.i18n.format("SWWC.isShakenWithWounds", { name: actor.name, wounds: woundsText });
                     await actor.update({ 'system.wounds.value': newWoundsValue });
                     if (totalWounds > maxWounds) {
                         message = await applyIncapacitated(actor);
@@ -220,47 +261,76 @@ async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
             }
         },
         default: "soakBenny"
-    }, { classes: appCssClasses }).render(true);
+    }, { classes: appCssClasses });
+    // If Bennies aren't available, remove that option.
+    if ((actor.isWildcard && actor.bennies <= 0) || (!actor.isWildcard && game.user.isGM && game.user.bennies <= 0)) {
+        delete soakDialog.data.buttons.soakBenny;
+    }
+    // Render the Dialog.
+    soakDialog.render(true);
 }
 
+// Function for translating damage to Wounds.
 async function calcWounds(actor, damage, ap) {
-    const woundCap = game.settings.get(MODULE_TITLE, 'woundCap');
     let message = '';
+    // Get Toughness values.
     let { armor, value } = actor.system.stats.toughness;
+    // If the Actor is a vehicle, get appropriate values.
     if (actor.type === "vehicle") {
         armor = Number(actor.system.toughness.armor);
         value = Number(actor.system.toughness.total);
     }
+    // AP vs Armor
     const apNeg = Math.min(ap, armor);
+    // New Toughness
     const newT = value - apNeg;
+    // Calculate how much over.
     const excess = damage - newT;
+    // Translate damage raises to Wounds.
     let woundsInflicted = Math.floor(excess / 4);
+    // Check if WoundCap is in play.
+    const woundCap = game.settings.get(MODULE_TITLE, 'woundCap');
+    // If Wound Cap, limit Wounds inflicted (i.e. to Soak) to 4
     if (woundCap && woundsInflicted > 4) {
         woundsInflicted = 4;
     }
+    // Default status to apply as none.
     let statusToApply = 'none';
+    // If damage meets Toughness without a raise.
     if (excess >= 0 && excess < 4) {
+        // Set status to Shaken.
         statusToApply = "shaken";
+        // If already shaken, set status to wounded and wounds inflicted to 1.
         if (actor.system.status.isShaken && woundsInflicted === 0) {
             woundsInflicted = 1;
             statusToApply = "wounded";
         }
     } else if (excess >= 4) {
+        // If damage is a raise over Toughness, set status to wounded
         statusToApply = "wounded";
     }
+    // If status is wounded...
     if (statusToApply === 'wounded') {
+        // Prompt to Soak the Wounds.
         await soakPrompt(actor, damage, ap, woundsInflicted, statusToApply);
     } else if (statusToApply === "shaken") {
+        // If Shaken, set message.
         message = game.i18n.format("SWWC.isShaken", { name: actor.name });
+        // Apply Shaken Status Effect.
         await applyShaken(actor);
+        // Output chat message.
         await ChatMessage.create({ content: message });
     } else if (statusToApply === 'none') {
+        // If no status to apply because damage was too low, output a message saying such.
         message = game.i18n.format("SWWC.noSignificantDamage", { name: actor.name });
         await ChatMessage.create({ content: message });
     }
 }
 
+
+// Function to take in and set adjusted Damage Values
 function adjustDamageValues(actor, damage, ap) {
+    // Construct dialog with fields for damage and AP values.
     new Dialog({
         title: game.i18n.format("SWWC.title"),
         content: `
@@ -279,26 +349,31 @@ function adjustDamageValues(actor, damage, ap) {
                 callback: async (html) => {
                     const damage = Number(html.find("#damage")[0].value);
                     const ap = Number(html.find("#ap")[0].value);
+                    // Calculate the Wounds.
                     await calcWounds(actor, damage, ap);
                 }
             }
         },
         default: "calculate"
     }, { classes: appCssClasses }).render(true);
-
 }
 
+// Function to prompt whether to adjust damage before Wounds are calculated.
 async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
     let actor;
+    // Get the target.
     const target = await fromUuid(tokenActorUUID);
+    // Determine if the target is an Actor or Token to set the actor object variable.
     if (target.documentName === 'Actor') {
         actor = target;
     } else if (target.documentName === 'Token') {
         actor = target.actor;
     }
+    // Determine whether there are any owners that are not GMs.
     const playerOwners = Object.keys(actor.ownership).filter((id) => {
         return game.users.find((u) => u.id === id && !u.isGM);
     });
+    // Determine ownership to prompt the appropriate user with the Dialog
     const userHasOwnerPermission = actor.ownership[game.userId] === 3;
     const userIsGM = game.user.isGM;
     const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
@@ -315,11 +390,15 @@ async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
     }
 }
 
+// Function to trigger the workflow either on the current client or on other client(s).
 function triggerFlow(targets, damage, ap) {
+    // For each tokent targeted...
     for (const target of targets) {
+        // Determine whether there are any owners that are not GMs.
         const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
             return game.users.find((u) => u.id === id && !u.isGM);
         });
+        // Determine ownership to prompt the appropriate user with the Dialog
         const userHasOwnerPermission = target.actor.ownership[game.userId] === 3;
         const userIsGM = game.user.isGM;
         const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
@@ -341,23 +420,30 @@ function triggerFlow(targets, damage, ap) {
     }
 }
 
+// Set Hook to trigger the workflow on createChatMessage.
 Hooks.on('createChatMessage', function (data) {
+    // Determine whether the chat message creator is the same as the current user.
     const sameUser = data.user.id === game.userId;
     const flavor = data.flavor;
+    // If the chat message is a damage roll and it's the same user...
     if (sameUser && data.rolls.length && flavor.includes('Damage')) {
+        // Collect the user's Targets
         const targets = data.user.targets;
+        // If there are targets, get the damage and ap, and trigger the flow with the data.
         if (targets.size) {
             const damage = data.rolls[0].total;
-            const ap = Number(flavor.slice(flavor.indexOf('AP ') + 3));
+            const ap = parseInt(flavor.slice(flavor.indexOf('AP ') + 3));
             triggerFlow(targets, damage, ap);
         }
     }
 });
 
+// Class for executing the script via the Macro.
 class WoundsCalculator {
     static render() {
         const targets = game.user.targets;
         if (targets.size) {
+            // Construct Dialog for data input and trigger flow.
             new Dialog({
                 title: game.i18n.format("SWWC.title"),
                 content: `
@@ -379,9 +465,11 @@ class WoundsCalculator {
                 default: "calculate"
             }, { classes: appCssClasses }).render(true);
         } else {
+            // If no targets selected, issue warning notification.
             ui.notifications.warn("Please select one or more Targets.");
         }
     }
 }
 
+// Globalize this bad boy.
 globalThis.WoundsCalculator = WoundsCalculator;
