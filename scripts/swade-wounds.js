@@ -50,60 +50,50 @@ Hooks.on('ready', function () {
 
 const appCssClasses = ["swade-app"];
 
-async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
-    const woundsText = `${woundsInflicted} ${woundsInflicted > 1 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
-    let message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText });
-    await ChatMessage.create({ content: message });
-    new Dialog({
-        title: game.i18n.format("SWWC.soakTitle", { name: actor.name }),
-        content: game.i18n.format("SWWC.soakDmgPrompt", { name: actor.name, wounds: woundsText }),
-        buttons: {
-            soakBenny: {
-                label: game.i18n.format("SWWC.soakBenny"),
-                callback: async () => {
-                    if (actor.isWildcard && actor.bennies > 0) {
-                        actor.spendBenny();
-                    } else if (!actor.isWildcard && game.user.isGM && game.user.bennies > 0) {
-                        game.user.spendBenny();
-                    }
-                    await attemptSoak(actor, woundsInflicted, statusToApply, woundsText);
-                }
-            },
-            soakFree: {
-                label: game.i18n.format("SWWC.soakFree"),
-                callback: async () => {
-                    await attemptSoak(actor, woundsInflicted, statusToApply, woundsText);
-                }
-            },
-            take: {
-                label: game.i18n.format("SWWC.takeWounds", { wounds: woundsText }),
-                callback: async () => {
-                    const existingWounds = actor.system.wounds.value;
-                    const maxWounds = actor.system.wounds.max;
-                    const totalWounds = existingWounds + woundsInflicted;
-                    const newWoundsValue = totalWounds < maxWounds ? totalWounds : maxWounds;
-                    let message = game.i18n.format("SWWC.woundsTaken", { name: actor.name, wounds: woundsText });
-                    await actor.update({ 'system.wounds.value': newWoundsValue });
-                    if (totalWounds > maxWounds) {
-                        message = await applyIncapacitated(actor);
-                    } else {
-                        await applyShaken(actor);
-                    }
-                    await ChatMessage.create({ content: message });
-                    if (game.settings.get(MODULE_TITLE, "apply-gritty-damage")) {
-                        await promptGrittyDamage();
-                    }
-                }
-            },
-            adjust: {
-                label: game.i18n.format("SWWC.adjustDamage"),
-                callback: async () => {
-                    adjustDamageValues(actor, damage, ap);
-                }
+async function applyIncapacitated(actor) {
+    const isIncapacitated = actor.effects.find((e) => e.label === 'Incapacitated');
+    if (isIncapacitated === undefined) {
+        const data = CONFIG.SWADE.statusEffects.find((s) => s.id === 'incapacitated');
+        await actor.toggleActiveEffect(data, { active: true });
+    }
+    return game.i18n.format("SWWC.incapacitated", { name: actor.name });
+}
+
+async function promptGrittyDamage() {
+    const injuryTableId = game.settings.get(MODULE_TITLE, "injury-table");
+    let injuryTable;
+    for (const p of game.packs) {
+        for (const i of p.index) {
+            if (i._id === injuryTableId) {
+                const pack = await game.packs.get(p.collection);
+                injuryTable = await pack.getDocument(i._id);
             }
-        },
-        default: "soakBenny"
-    }, { classes: appCssClasses }).render(true);
+        }
+    }
+    new Dialog({
+        title: game.i18n.format("SWWC.GrittyDamage"),
+        content: `<p>${game.i18n.format("SWWC.RollGrittyDamageDesc")}</p>`,
+        buttons: {
+            roll: {
+                label: "Roll",
+                callback: async () => {
+                    await injuryTable.draw();
+                    // TODO: Add automatic roll on injury subtables when they are added to the modules.
+                }
+            },
+            cancel: {
+                label: "Cancel"
+            }
+        }
+    }).render(true);
+}
+
+async function applyShaken(actor) {
+    const isShaken = actor.system.status.isShaken;
+    if (!isShaken) {
+        const data = CONFIG.SWADE.statusEffects.find(s => s.id === 'shaken');
+        await actor.toggleActiveEffect(data, { active: true });
+    }
 }
 
 async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, bestSoakAttempt = null) {
@@ -177,54 +167,63 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
     }
 }
 
-async function applyShaken(actor) {
-    const isShaken = actor.system.status.isShaken;
-    if (!isShaken) {
-        const data = CONFIG.SWADE.statusEffects.find(s => s.id === 'shaken');
-        await actor.toggleActiveEffect(data, { active: true });
-    }
-}
-
-async function applyIncapacitated(actor) {
-    const isIncapacitated = actor.effects.find((e) => e.label === 'Incapacitated');
-    if (isIncapacitated === undefined) {
-        const data = CONFIG.SWADE.statusEffects.find((s) => s.id === 'incapacitated');
-        await actor.toggleActiveEffect(data, { active: true });
-    }
-    return game.i18n.format("SWWC.incapacitated", { name: actor.name });
-}
-
-async function promptGrittyDamage() {
-    const injuryTableId = game.settings.get(MODULE_TITLE, "injury-table");
-    let injuryTable;
-    for (const p of game.packs) {
-        for (const i of p.index) {
-            if (i._id === injuryTableId) {
-                const pack = await game.packs.get(p.collection);
-                injuryTable = await pack.getDocument(i._id);
-            }
-        }
-    }
+async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
+    const woundsText = `${woundsInflicted} ${woundsInflicted > 1 ? game.i18n.format("SWWC.wounds") : game.i18n.format("SWWC.wound")}`;
+    let message = game.i18n.format("SWWC.woundsAboutToBeTaken", { name: actor.name, wounds: woundsText });
+    await ChatMessage.create({ content: message });
     new Dialog({
-        title: game.i18n.format("SWWC.GrittyDamage"),
-        content: `<p>${game.i18n.format("SWWC.RollGrittyDamageDesc")}</p>`,
+        title: game.i18n.format("SWWC.soakTitle", { name: actor.name }),
+        content: game.i18n.format("SWWC.soakDmgPrompt", { name: actor.name, wounds: woundsText }),
         buttons: {
-            roll: {
-                label: "Roll",
+            soakBenny: {
+                label: game.i18n.format("SWWC.soakBenny"),
                 callback: async () => {
-                    await injuryTable.draw();
-                    // TODO: Add automatic roll on injury subtables when they are added to the modules.
+                    if (actor.isWildcard && actor.bennies > 0) {
+                        actor.spendBenny();
+                    } else if (!actor.isWildcard && game.user.isGM && game.user.bennies > 0) {
+                        game.user.spendBenny();
+                    }
+                    await attemptSoak(actor, woundsInflicted, statusToApply, woundsText);
                 }
             },
-            cancel: {
-                label: "Cancel"
+            soakFree: {
+                label: game.i18n.format("SWWC.soakFree"),
+                callback: async () => {
+                    await attemptSoak(actor, woundsInflicted, statusToApply, woundsText);
+                }
+            },
+            take: {
+                label: game.i18n.format("SWWC.takeWounds", { wounds: woundsText }),
+                callback: async () => {
+                    const existingWounds = actor.system.wounds.value;
+                    const maxWounds = actor.system.wounds.max;
+                    const totalWounds = existingWounds + woundsInflicted;
+                    const newWoundsValue = totalWounds < maxWounds ? totalWounds : maxWounds;
+                    let message = game.i18n.format("SWWC.woundsTaken", { name: actor.name, wounds: woundsText });
+                    await actor.update({ 'system.wounds.value': newWoundsValue });
+                    if (totalWounds > maxWounds) {
+                        message = await applyIncapacitated(actor);
+                    } else {
+                        await applyShaken(actor);
+                    }
+                    await ChatMessage.create({ content: message });
+                    if (game.settings.get(MODULE_TITLE, "apply-gritty-damage")) {
+                        await promptGrittyDamage();
+                    }
+                }
+            },
+            adjust: {
+                label: game.i18n.format("SWWC.adjustDamage"),
+                callback: async () => {
+                    adjustDamageValues(actor, damage, ap);
+                }
             }
-        }
-    }).render(true);
+        },
+        default: "soakBenny"
+    }, { classes: appCssClasses }).render(true);
 }
 
 async function calcWounds(actor, damage, ap) {
-
     const woundCap = game.settings.get(MODULE_TITLE, 'woundCap');
     let message = '';
     let { armor, value } = actor.system.stats.toughness;
@@ -249,7 +248,6 @@ async function calcWounds(actor, damage, ap) {
     } else if (excess >= 4) {
         statusToApply = "wounded";
     }
-
     if (statusToApply === 'wounded') {
         await soakPrompt(actor, damage, ap, woundsInflicted, statusToApply);
     } else if (statusToApply === "shaken") {
@@ -289,6 +287,34 @@ function adjustDamageValues(actor, damage, ap) {
     }, { classes: appCssClasses }).render(true);
 
 }
+
+async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
+    let actor;
+    const target = await fromUuid(tokenActorUUID);
+    if (target.documentName === 'Actor') {
+        actor = target;
+    } else if (target.documentName === 'Token') {
+        actor = target.actor;
+    }
+    const playerOwners = Object.keys(actor.ownership).filter((id) => {
+        return game.users.find((u) => u.id === id && !u.isGM);
+    });
+    const userHasOwnerPermission = actor.ownership[game.userId] === 3;
+    const userIsGM = game.user.isGM;
+    const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
+    const userIsPlayerAndOwner = !userIsGM && userHasOwnerPermission;
+    const userIsOwner = userIsGmAndOwner || userIsPlayerAndOwner;
+    if (userIsOwner) {
+        Dialog.confirm({
+            title: game.i18n.format("SWWC.title"),
+            content: game.i18n.format("SWWC.adjustDamagePrompt"),
+            yes: () => adjustDamageValues(actor, damage, ap),
+            no: async () => await calcWounds(actor, damage, ap),
+            defaultYes: false
+        }, { classes: appCssClasses });
+    }
+}
+
 function triggerFlow(targets, damage, ap) {
     for (const target of targets) {
         const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
@@ -315,32 +341,19 @@ function triggerFlow(targets, damage, ap) {
     }
 }
 
-async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
-    let actor;
-    const target = await fromUuid(tokenActorUUID);
-    if (target.documentName === 'Actor'){
-        actor = target;
-    } else if (target.documentName === 'Token') {
-        actor = target.actor;
+Hooks.on('createChatMessage', function (data) {
+    const sameUser = data.user.id === game.userId;
+    const flavor = data.flavor;
+    if (sameUser && data.rolls.length && flavor.includes('Damage')) {
+        const targets = data.user.targets;
+        if (targets.size) {
+            const damage = data.rolls[0].total;
+            const ap = Number(flavor.slice(flavor.indexOf('AP ') + 3));
+            triggerFlow(targets, damage, ap);
+        }
     }
-    const playerOwners = Object.keys(actor.ownership).filter((id) => {
-        return game.users.find((u) => u.id === id && !u.isGM);
-    });
-    const userHasOwnerPermission = actor.ownership[game.userId] === 3;
-    const userIsGM = game.user.isGM;
-    const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
-    const userIsPlayerAndOwner = !userIsGM && userHasOwnerPermission;
-    const userIsOwner = userIsGmAndOwner || userIsPlayerAndOwner;
-    if (userIsOwner) {
-        Dialog.confirm({
-            title: game.i18n.format("SWWC.title"),
-            content: game.i18n.format("SWWC.adjustDamagePrompt"),
-            yes: () => adjustDamageValues(actor, damage, ap),
-            no: async () => await calcWounds(actor, damage, ap),
-            defaultYes: false
-        }, { classes: appCssClasses });
-    }
-}
+});
+
 class WoundsCalculator {
     static render() {
         const targets = game.user.targets;
@@ -370,18 +383,5 @@ class WoundsCalculator {
         }
     }
 }
-
-Hooks.on('createChatMessage', function (data) {
-    const sameUser = data.user.id === game.userId;
-    const flavor = data.flavor;
-    if (sameUser && data.rolls.length && flavor.includes('Damage')) {
-        const targets = data.user.targets;
-        if (targets.size) {
-            const damage = data.rolls[0].total;
-            const ap = Number(flavor.slice(flavor.indexOf('AP ') + 3));
-            triggerFlow(targets, damage, ap);
-        }
-    }
-});
 
 globalThis.WoundsCalculator = WoundsCalculator;
