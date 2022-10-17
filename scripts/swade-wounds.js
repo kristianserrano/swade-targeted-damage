@@ -359,7 +359,7 @@ class WoundsCalculator {
                         callback: async (html) => {
                             const damage = Number(html.find("#damage")[0].value);
                             const ap = Number(html.find("#ap")[0].value);
-                            calcWounds(targets, damage, ap);
+                            triggerFlow(targets, damage, ap);
                         }
                     }
                 },
@@ -378,7 +378,7 @@ Hooks.on('createChatMessage', function (data) {
         const targets = data.user.targets;
         if (targets.size) {
             const damage = data.rolls[0].total;
-            const ap = parseInt(flavor.slice(flavor.indexOf('AP ') + 3));
+            const ap = Number(flavor.slice(flavor.indexOf('AP ') + 3));
             triggerFlow(targets, damage, ap);
         }
     }
