@@ -15,7 +15,7 @@
     "SWWC.soakedAll": "<p><strong>{name}</strong> Soaked all Wounds and is not Shaken!</p>",
     "SWWC.incapacitated": "<p><strong>{name}</strong> is <strong>Incapacitated!</strong></p>",
     "SWWC.isShaken": "<p><strong>{name}</strong> is <strong>Shaken</strong>!</p>",
-    "SWWC.woundsTaken": "<p><strong>{name}</strong> is <strong>Shaken</strong> with <strong>{wounds}</strong>!</p>",
+    "SWWC.isShakenWithWounds": "<p><strong>{name}</strong> is <strong>Shaken</strong> with <strong>{wounds}</strong>!</p>",
     "SWWC.woundsAboutToBeTaken": "<p><strong>{name}</strong> is about to take <strong>{wounds}</strong>!</p>",
     "SWWC.calculate": "Calculate Wounds",
     "SWWC.notHarmed": "Not Harmed",
