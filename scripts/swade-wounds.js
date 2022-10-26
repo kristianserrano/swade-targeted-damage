@@ -167,7 +167,6 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
                                 message = game.i18n.format("SWWC.isShaken", { name: actor.name });
                             }
                         }
-                        debugger
                         if (statusToApply === 'wounded') {
                             // Update Wounds
                             await actor.update({ 'system.wounds.value': newWoundsValue });
