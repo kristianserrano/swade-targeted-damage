@@ -192,7 +192,7 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
                 },
             },
             default: "accept"
-        }, { classes: appCssClasses })
+        }, { classes: appCssClasses });
         // If no Bennies available, remove the option from the Dialog.
         if ((actor.isWildcard && actor.bennies <= 0) || (!actor.isWildcard && game.user.isGM && game.user.bennies <= 0)) {
             delete rerollSoakDialog.data.buttons.rerollBenny;
@@ -242,7 +242,8 @@ async function soakPrompt(actor, damage, ap, woundsInflicted, statusToApply) {
                     let message = game.i18n.format("SWWC.isShakenWithWounds", { name: actor.name, wounds: woundsText });
                     await actor.update({ 'system.wounds.value': newWoundsValue });
                     if (totalWounds > maxWounds) {
-                        message = await applyIncapacitated(actor);
+                        await applyIncapacitated(actor);
+                        message = game.i18n.format("SWWC.incapacitated", { name: actor.name });
                     } else {
                         await applyShaken(actor);
                     }
@@ -358,7 +359,7 @@ function adjustDamageValues(actor, damage, ap) {
 }
 
 // Function to prompt whether to adjust damage before Wounds are calculated.
-async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
+async function adjustDamagePrompt({ tokenActorUUID, damage, ap, targetUserId }) {
     let actor;
     // Get the target.
     const target = await fromUuid(tokenActorUUID);
@@ -368,20 +369,14 @@ async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
     } else if (target.documentName === 'Token') {
         actor = target.actor;
     }
-    // Determine whether there are any owners that are not GMs.
-    const playerOwners = Object.keys(actor.ownership).filter((id) => {
-        return game.users.find((u) => u.id === id && !u.isGM);
-    });
-    // Determine ownership to prompt the appropriate user with the Dialog
-    const userHasOwnerPermission = actor.ownership[game.userId] === 3;
-    const userIsGM = game.user.isGM;
-    const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
-    const userIsPlayerAndOwner = !userIsGM && userHasOwnerPermission;
-    const userIsOwner = userIsGmAndOwner || userIsPlayerAndOwner;
-    if (userIsOwner) {
+
+    // TODO: Figure out sending prompt to specific player.
+    if (!!targetUserId && game.userId !== targetUserId && actor.ownership.default !== 3) return;
+
+    if ((!targetUserId && promptThisUser(actor, damage, ap)) || (targetUserId && game.userId === targetUserId)) {
         Dialog.confirm({
-            title: game.i18n.format("SWWC.title"),
-            content: game.i18n.format("SWWC.adjustDamagePrompt"),
+            title: game.i18n.format("SWWC.adjustDamageTitle", { name: actor.name }),
+            content: game.i18n.format("SWWC.adjustDamagePrompt", { name: actor.name }),
             yes: () => adjustDamageValues(actor, damage, ap),
             no: async () => await calcWounds(actor, damage, ap),
             defaultYes: false
@@ -389,21 +384,65 @@ async function adjustDamagePrompt({ tokenActorUUID, damage, ap }) {
     }
 }
 
+// Function to determine if this client's user should be prompted.
+function promptThisUser(actor, damage, ap) {
+    // Find the player who has selected this Actor as their character and is active, if any.
+    const activeCharacterPlayer = game.users.find((u) => u.character && u.character.id === actor.id && u.active);
+    // Is the active character player the current user?
+    const userIsActiveCharacterPlayer = activeCharacterPlayer && activeCharacterPlayer.id === game.userId;
+    if (userIsActiveCharacterPlayer) return true;
+    // Is the default ownership "owner" (3)?
+    const defaultOwnership = actor.ownership.default === 3;
+    // Does the current user have ownership of the Actor?
+    const userHasOwnerPermission = actor.ownership[game.userId] === 3;
+    // Is the user a GM?
+    const userIsGM = game.user.isGM;
+    // Are there any players (not GMs) with ownership that are active?
+    const activePlayerOwners = Object.keys(actor.ownership).filter((id) => { return game.users.find((u) => u.id === id && !u.isGM && u.active); });
+    // Are there multiple active players?
+    const multipleActivePlayers = game.users.filter((u) => u.active && !u.isGM);
+    // Are there multiple active players who own the actor?
+    const multipleActiveOwners = activePlayerOwners.length || (multipleActivePlayers.length > 1 && defaultOwnership);
+    // If there is no active character player, and the user has ownership in some way, and the user is not a GM, and there are not multiple owners
+    if (!activeCharacterPlayer && !userIsGM && !multipleActiveOwners && (userHasOwnerPermission || defaultOwnership)) return true;
+    // Is there any player owner available?
+    const noUniquePlayerOwnerAvailable = !activeCharacterPlayer && multipleActiveOwners;
+    if (userIsGM && noUniquePlayerOwnerAvailable) {
+        const buttons = {};
+        const activePlayers = game.users.filter((u) => !u.isGM && u.active);
+        for (const player of activePlayers) {
+            buttons[player.id] = {
+                label: player.name,
+                callback: () => {
+                    game.socket.emit(`module.${MODULE_TITLE}`, {
+                        tokenActorUUID: actor.uuid,
+                        damage: damage,
+                        ap: ap,
+                        targetUserId: player.id
+                    });
+                }
+            };
+        }
+        new Dialog({
+            title: game.i18n.format("SWWC.ChoosePlayer"),
+            content: `${game.i18n.format("SWWC.ChoosePlayerPrompt", { name: actor.name })}`,
+            buttons: buttons,
+            default: ""
+        }, { classes: appCssClasses }).render(true);
+    }
+    if (userIsGM && !activeCharacterPlayer && !activePlayerOwners.length && !multipleActiveOwners && !defaultOwnership) return true;
+    return false;
+}
+
 // Function to trigger the workflow either on the current client or on other client(s).
 function triggerFlow(targets, damage, ap) {
-    // For each tokent targeted...
+    // For each token targeted...
     for (const target of targets) {
         // Determine whether there are any owners that are not GMs.
-        const playerOwners = Object.keys(target.actor.ownership).filter((id) => {
-            return game.users.find((u) => u.id === id && !u.isGM);
-        });
-        // Determine ownership to prompt the appropriate user with the Dialog
-        const userHasOwnerPermission = target.actor.ownership[game.userId] === 3;
-        const userIsGM = game.user.isGM;
-        const userIsGmAndOwner = userIsGM && playerOwners.length === 0;
-        const userIsPlayerAndOwner = !userIsGM && userHasOwnerPermission;
-        const userIsOwner = userIsGmAndOwner || userIsPlayerAndOwner;
-        if (userIsOwner) {
+        const characterPlayer = game.users.find((u) => u.character && u.character.id === target.actor.id);
+        let targetUserId;
+        if (!!characterPlayer) targetUserId = characterPlayer.id;
+        if (promptThisUser(target.actor, damage, ap)) {
             adjustDamagePrompt({
                 tokenActorUUID: target.actor.uuid,
                 damage: damage,
@@ -413,7 +452,8 @@ function triggerFlow(targets, damage, ap) {
             game.socket.emit(`module.${MODULE_TITLE}`, {
                 tokenActorUUID: target.actor.uuid,
                 damage: damage,
-                ap: ap
+                ap: ap,
+                targetUserId: targetUserId
             });
         }
     }
