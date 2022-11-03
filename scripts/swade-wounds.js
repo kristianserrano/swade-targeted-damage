@@ -390,7 +390,6 @@ function promptThisUser(actor, damage, ap) {
     const activeCharacterPlayer = game.users.find((u) => u.character && u.character.id === actor.id && u.active);
     // Is the active character player the current user?
     const userIsActiveCharacterPlayer = activeCharacterPlayer && activeCharacterPlayer.id === game.userId;
-    if (userIsActiveCharacterPlayer) return true;
     // Is the default ownership "owner" (3)?
     const defaultOwnership = actor.ownership.default === 3;
     // Does the current user have ownership of the Actor?
@@ -402,11 +401,11 @@ function promptThisUser(actor, damage, ap) {
     // Are there multiple active players?
     const multipleActivePlayers = game.users.filter((u) => u.active && !u.isGM);
     // Are there multiple active players who own the actor?
-    const multipleActiveOwners = activePlayerOwners.length || (multipleActivePlayers.length > 1 && defaultOwnership);
-    // If there is no active character player, and the user has ownership in some way, and the user is not a GM, and there are not multiple owners
-    if (!activeCharacterPlayer && !userIsGM && !multipleActiveOwners && (userHasOwnerPermission || defaultOwnership)) return true;
+    const multipleActiveOwners = activePlayerOwners.length > 1 || (multipleActivePlayers.length > 1 && defaultOwnership);
     // Is there any player owner available?
     const noUniquePlayerOwnerAvailable = !activeCharacterPlayer && multipleActiveOwners;
+    if (userIsActiveCharacterPlayer || (!userIsGM && !multipleActiveOwners && userHasOwnerPermission)) return true;
+    if (!activeCharacterPlayer && !userIsGM && !multipleActiveOwners && (userHasOwnerPermission || defaultOwnership)) return true;
     if (userIsGM && noUniquePlayerOwnerAvailable) {
         const buttons = {};
         const activePlayers = game.users.filter((u) => !u.isGM && u.active);
