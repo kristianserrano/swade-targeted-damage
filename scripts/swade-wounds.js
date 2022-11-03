@@ -424,7 +424,7 @@ function promptThisUser(actor, damage, ap) {
             };
         }
         new Dialog({
-            title: game.i18n.format("SWWC.ChoosePlayer"),
+            title: game.i18n.format("SWWC.ChoosePlayerTitle"),
             content: `${game.i18n.format("SWWC.ChoosePlayerPrompt", { name: actor.name })}`,
             buttons: buttons,
             default: ""
