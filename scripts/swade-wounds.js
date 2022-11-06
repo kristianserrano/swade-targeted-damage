@@ -330,6 +330,7 @@ async function calcWounds(actor, damage, ap) {
 
 // Function to take in and set adjusted Damage Values
 function adjustDamageValues(actor, damage, ap) {
+    // TODO: Add options for called shots. Extract armor values for targeted areas from Actor data.
     // Construct dialog with fields for damage and AP values.
     new Dialog({
         title: game.i18n.format("SWWC.title"),
@@ -386,7 +387,7 @@ async function adjustDamagePrompt({ tokenActorUUID, damage, ap, targetUserId }) 
 
 // Function to determine if this client's user should be prompted.
 function promptThisUser(actor, damage, ap) {
-    // Find the player who has selected this Actor as their character and is active, if any.
+    // Find the player who has selected this Target Actor as their character and is active, if any.
     const activeCharacterPlayer = game.users.find((u) => u.character && u.character.id === actor.id && u.active);
     // Is the active character player the current user?
     const userIsActiveCharacterPlayer = activeCharacterPlayer && activeCharacterPlayer.id === game.userId;
@@ -404,8 +405,13 @@ function promptThisUser(actor, damage, ap) {
     const multipleActiveOwners = activePlayerOwners.length > 1 || (multipleActivePlayers.length > 1 && defaultOwnership);
     // Is there any player owner available?
     const noUniquePlayerOwnerAvailable = !activeCharacterPlayer && multipleActiveOwners;
-    if (userIsActiveCharacterPlayer || (!userIsGM && !multipleActiveOwners && userHasOwnerPermission)) return true;
+    // Prompt this user if the user is the player to whom the Target Actor is assigned,
+    // or if the user is a player and has owner permissions and there are not other active players with owner permissions.
+    if (userIsActiveCharacterPlayer || (!userIsGM && userHasOwnerPermission && !multipleActiveOwners)) return true;
+    // Prompt this user if the user is a player, is not assigned the Target Actor, and there are no other active players with owner permissions,
+    // but the user either has owner permissions or the Target Actor's default ownership is owner.
     if (!activeCharacterPlayer && !userIsGM && !multipleActiveOwners && (userHasOwnerPermission || defaultOwnership)) return true;
+    // Prompt the GM to select a player to prompt if they are the GM and there are multiple active players with owner permission.
     if (userIsGM && noUniquePlayerOwnerAvailable) {
         const buttons = {};
         const activePlayers = game.users.filter((u) => !u.isGM && u.active);
@@ -428,7 +434,9 @@ function promptThisUser(actor, damage, ap) {
             buttons: buttons,
             default: ""
         }, { classes: appCssClasses }).render(true);
+        return false;
     }
+    // Prompt the user if they are the GM and there is no player assigned the Target Actor, no other active player owners with assigned permissions, and no other players that have default ownership.
     if (userIsGM && !activeCharacterPlayer && !activePlayerOwners.length && !multipleActiveOwners && !defaultOwnership) return true;
     return false;
 }
