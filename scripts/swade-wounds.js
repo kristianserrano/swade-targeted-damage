@@ -179,7 +179,7 @@ async function attemptSoak(actor, woundsInflicted, statusToApply, woundsText, be
                                 await ChatMessage.create({ content: message });
                             } else {
                                 await applyShaken(actor);
-                                message = game.i18n.format("SWWC.shakenWithWounds", { name: actor.name, wounds: newWoundsValueText });
+                                message = game.i18n.format("SWWC.isShakenWithWounds", { name: actor.name, wounds: newWoundsValueText });
                             }
                             // Output Chat Message.
                             await ChatMessage.create({ content: message });
