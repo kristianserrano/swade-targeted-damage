@@ -31,11 +31,6 @@
                 "id": "swade",
                 "type": "system",
                 "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json",
-                "compatibility": {
-                    "minimum": "2",
-                    "verified": "2",
-                    "maximum": "2"
-                }
             }
         ]
     },
