@@ -30,7 +30,7 @@
             {
                 "id": "swade",
                 "type": "system",
-                "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json",
+                "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json"
             }
         ]
     },
