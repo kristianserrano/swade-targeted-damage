@@ -25,23 +25,28 @@
         "verified": 10,
         "maximum": 10
     },
-    "requires": [
-        {
-            "id": "swade",
-            "type": "system",
-            "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json",
-            "compatibility": {
-                "minimum": "2",
-                "verified": "2",
-                "maximum": "2"
+    "relationships": {
+        "systems": [
+            {
+                "id": "swade",
+                "type": "system",
+                "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json",
+                "compatibility": {
+                    "minimum": "2",
+                    "verified": "2",
+                    "maximum": "2"
+                }
             }
-        }
+        ]
+    },
+    "system": [
+        "swade"
     ],
     "esmodules": [
         "/scripts/swade-wounds.js"
     ],
     "styles": [],
-    "packs":[
+    "packs": [
         {
             "label": "SWADE Wounds Calculator Macro",
             "name": "macros",
