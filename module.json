@@ -30,7 +30,7 @@
         "swade"
     ],
     "esmodules": [
-        "scripts/swade-wounds.mjs"
+        "scripts/swade-targeted-damage.mjs"
     ],
     "styles": [],
     "packs": [
