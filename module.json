@@ -1,10 +1,8 @@
 {
-    "id": "swade-wounds-calculator",
-    "title": "SWADE Wounds Calculator",
-    "description": "A macro that calculates Wounds from damage and initiates a procedure for Soaking and applying them.",
-    "version": "1.0.0",
-    "library": "false",
-    "manifestPlusVersion": "1.0.0",
+    "id": "swade-targeted-damage",
+    "title": "SWADE Targeted Damage",
+    "description": "A module that allows for using targeted tokens to resolve damage rolls.",
+    "version": "2.0.0",
     "authors": [
         {
             "name": "Kristian Serrano",
@@ -13,17 +11,11 @@
             "discord": "Kristian Serrano#5077",
             "twitter": "@KristianSerrano",
             "reddit": "u/kristianserrano"
-        },
-        {
-            "name": "Kandashi",
-            "url": "https://github.com/Kandashi",
-            "discord": "Kandashi (He/Him)#6698"
         }
     ],
     "compatibility": {
         "minimum": 10,
-        "verified": 10,
-        "maximum": 10
+        "verified": 11
     },
     "relationships": {
         "systems": [
@@ -38,12 +30,12 @@
         "swade"
     ],
     "esmodules": [
-        "/scripts/swade-wounds.js"
+        "scripts/swade-wounds.mjs"
     ],
     "styles": [],
     "packs": [
         {
-            "label": "SWADE Wounds Calculator Macro",
+            "label": "SWADE Targeted Damage Macro",
             "name": "macros",
             "path": "packs/macros.db",
             "type": "Macro",
