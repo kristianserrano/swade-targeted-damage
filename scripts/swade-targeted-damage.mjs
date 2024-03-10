@@ -1,8 +1,17 @@
-const MODULE_TITLE = "swade-targeted-damage";
+import { TargetedDamageApplicator } from "./TargetedDamageApplicator.mjs";
 
-Hooks.on('ready', function () {
+export const MODULE_ID = "swade-targeted-damage";
+
+Hooks.on('setup', () => {
+    loadTemplates([
+        `modules/${MODULE_ID}/templates/apps/targeted-damage.hbs`,
+        `modules/${MODULE_ID}/templates/chat/damage-result.hbs`
+    ]);
+});
+
+Hooks.on('ready', () => {
     // Setup socket
-    game.socket.on(`module.${MODULE_TITLE}`, adjustDamagePrompt);
+    game.socket.on(`module.${MODULE_ID}`, renderTargetedDamageApp);
 });
 
 Hooks.on('swadePreCalcWounds', (actor, damageContext, woundsInflicted, statusToApply) => {
@@ -10,82 +19,107 @@ Hooks.on('swadePreCalcWounds', (actor, damageContext, woundsInflicted, statusToA
 });
 
 Hooks.on('renderChatMessage', (msg, html, data) => {
-    const button = html[0].querySelector('.swade-roll-message button.calculate-wounds');
-    const buttonHTML = button.outerHTML;
-    const parentElement = button?.parentElement;
-    button?.remove();
-    parentElement?.insertAdjacentHTML('afterbegin', buttonHTML);
+    const roll = msg.significantRoll;
 
-    html[0].querySelector('.swade-roll-message button.calculate-wounds').addEventListener('click', () => {
-        const roll = msg.significantRoll;
+    if (!roll || roll.constructor.name !== 'DamageRoll') return;
 
-        if (!roll || roll.constructor.name !== 'DamageRoll') return;
-        // If the chat message is a damage roll and it's the same user...
-        // Collect the user's Targets
-        const targets = data.user.targets;
-        // If there are targets, get the damage and ap, and trigger the flow with the data.
-        if (targets.size) {
-            const damage = roll.total;
-            const ap = roll.ap;
-            triggerFlow(targets, damage, ap);
+    // If the chat message is a damage roll...
+    if (roll.constructor.name === 'DamageRoll') {
+        const button = html[0].querySelector('.swade-roll-message button.calculate-wounds');
+        button.textContent = '';
+        const icon = document.createElement('i');
+        icon.classList.add('fa-solid', 'fa-meter-droplet');
+        button.append(icon);
+        button.insertAdjacentHTML('beforeend', game.i18n.localize('SWADETargetedDamage.Apply'));
+        const buttonHTML = button?.outerHTML;
+        const parentElement = button?.parentElement;
+        button.remove();
+
+        if (msg._source.user === game.userId || game.user.isGM) {
+            parentElement?.insertAdjacentHTML('afterbegin', buttonHTML);
         }
-    });
+        if (msg._source.user !== game.userId) {
+            const rerollButtons = html[0].querySelectorAll('.benny-reroll, .free-reroll');
+            rerollButtons.forEach((b) => b.remove());
+        }
+
+        html[0].querySelector('.swade-roll-message button.calculate-wounds')?.addEventListener('click', async () => {
+            // Collect the user's Targets
+            const targets = data.user.targets;
+
+            // If there are targets, get the damage and ap, and trigger the flow with the data.
+            if (targets.size) {
+                const damage = roll.total;
+                const ap = roll.ap;
+                await triggerFlow(targets, damage, ap);
+            }
+        });
+    }
 });
 
-// Set Hook to trigger the workflow on createChatMessage.
-/* Hooks.on('createChatMessage', function (msg, data, userId) {
-    // Determine whether the chat message creator is the same as the current user.
-    if (userId !== game.userId) return;
-    html.querySelector('.swade-roll-message button.calculate-wounds')?.addEventListener('click', () => {
-        const roll = msg.significantRoll;
-        if (!roll || !(roll instanceof DamageRoll)) return;
+// to trigger the workflow either on the current client or on other client(s).
+async function triggerFlow(targets, damage, ap) {
+    // For each token targeted...
+    for (const target of targets) {
+        // Determine whether there are any owners that are not GMs.
+        const hasPlayerOwner = target.actor.hasPlayerOwner;
 
-        // If the chat message is a damage roll and it's the same user...
-        // Collect the user's Targets
-        const targets = data.user.targets;
-        // If there are targets, get the damage and ap, and trigger the flow with the data.
-        if (targets.size) {
-            const damage = roll.total;
-            const ap = roll.ap;
-            triggerFlow(targets, damage, ap);
-        }
-    });
-}); */
-// Create string variable for the SWADE CSS class for App Windows.
-const appCssClasses = ["swade-app"];
+        if (hasPlayerOwner) {
+            // Get the player to whom this actor might be assigned.
+            const activeAssignedPlayer = game.users.find((u) => u.active && u.character?.id === target.actor.id);
+            const activePlayerOwners = game.users.filter((u) => !u.isGM && u.active && target.actor.ownership[u.id] === 3);
 
-// Class for executing the script via the Macro.
-class WoundsCalculator {
-    static render() {
-        const targets = game.user.targets;
-        if (targets.size) {
-            // Construct Dialog for data input and trigger flow.
-            new Dialog({
-                title: game.i18n.format("SWADA.title"),
-                content: `
-                    <label for="damage">${game.i18n.format("SWADE.Dmg")}</label>
-                    <input type="number" id="damage" autofocus>
-                    <label for="ap">${game.i18n.format("SWADE.Ap")}</label>
-                    <input type="number" id="ap">
-                `,
-                buttons: {
-                    calculate: {
-                        label: game.i18n.format("SWADA.calculate"),
-                        callback: async (html) => {
-                            const damage = Number(html.find("#damage")[0].value);
-                            const ap = Number(html.find("#ap")[0].value);
-                            triggerFlow(targets, damage, ap);
-                        }
+            if (activeAssignedPlayer || activePlayerOwners.length) {
+                if (!activeAssignedPlayer && game.user.isGM && activePlayerOwners.length > 1) {
+                    const buttons = {};
+
+                    for (const player of activePlayerOwners) {
+                        buttons[player.id] = {
+                            label: player.name,
+                            callback: () => {
+                                promptOtherUser(target.actor, player, damage, ap);
+                            }
+                        };
                     }
-                },
-                default: "calculate"
-            }, { classes: appCssClasses }).render(true);
+
+                    new Dialog({
+                        title: game.i18n.format("SWADETargetedDamage.ChoosePlayerTitle"),
+                        content: `${game.i18n.format("SWADETargetedDamage.ChoosePlayerPrompt", { name: actor.name })}`,
+                        buttons,
+                        default: ""
+                    }, { classes: ['swade-app'] }).render(true);
+                } else if (activeAssignedPlayer || activePlayerOwners.length === 1) {
+                    // Get the player owning the Token's Actor.
+                    const playerOwner = !!activeAssignedPlayer ? activeAssignedPlayer : activePlayerOwners[0];
+
+                    if (playerOwner === game.user) {
+                        await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
+                    } else {
+                        promptOtherUser(target.actor, playerOwner, damage, ap);
+                    }
+                }
+            } else if (game.user.isGM) {
+                await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
+            }
+        } else if (game.user.isGM) {
+            await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
         } else {
-            // If no targets selected, issue warning notification.
-            ui.notifications.warn("Please select one or more Targets.");
+            promptOtherUser(target.actor, game.users.activeGM, damage, ap);
         }
     }
 }
 
-// Globalize this bad boy.
-globalThis.WoundsCalculator = WoundsCalculator;
+function promptOtherUser(targetActor, targetUser, damage, ap) {
+    game.socket.emit(`module.${MODULE_ID}`, {
+        tokenActorUUID: targetActor.uuid,
+        targetUserId: targetUser?.id,
+        damage,
+        ap,
+    });
+}
+
+function renderTargetedDamageApp({ tokenActorUUID, damage, ap, targetUserId }) {
+    if (game.userId !== targetUserId) return;
+
+    new TargetedDamageApplicator(tokenActorUUID, damage, ap, targetUserId).render(true);
+}

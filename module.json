@@ -32,14 +32,17 @@
     "esmodules": [
         "scripts/swade-targeted-damage.mjs"
     ],
-    "styles": [],
+    "styles": ["styles/swade-targeted-damage.css"],
     "packs": [
         {
+            "name": "swade-targeted-damage-applicator-macro",
             "label": "SWADE Targeted Damage Macro",
-            "name": "macros",
             "path": "packs/macros.db",
             "type": "Macro",
-            "private": false
+            "ownership": {
+                "PLAYER": "OBSERVER",
+                "ASSISTANT": "OWNER"
+            }
         }
     ],
     "languages": [
@@ -52,5 +55,22 @@
     "socket": true,
     "url": "This is auto replaced",
     "manifest": "This is auto replaced",
-    "download": "This is auto replaced"
+    "download": "This is auto replaced",
+    "flags": {
+        "hotReload": {
+            "extensions": [
+                "json",
+                "css",
+                "hbs",
+                "mjs"
+            ],
+            "paths": [
+                "lang/en.json",
+                "styles/swade-targeted-damage.css",
+                "scripts/swade-targeted-damage.mjs",
+                "scripts/apps/TargetedDamageApplicator.mjs",
+                "templates/apps/targeted-damage.hbs"
+            ]
+        }
+    }
 }
