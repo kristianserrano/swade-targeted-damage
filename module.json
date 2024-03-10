@@ -33,18 +33,7 @@
         "scripts/swade-targeted-damage.mjs"
     ],
     "styles": ["styles/swade-targeted-damage.css"],
-    "packs": [
-        {
-            "name": "swade-targeted-damage-applicator-macro",
-            "label": "SWADE Targeted Damage Macro",
-            "path": "packs/macros.db",
-            "type": "Macro",
-            "ownership": {
-                "PLAYER": "OBSERVER",
-                "ASSISTANT": "OWNER"
-            }
-        }
-    ],
+    "packs": [],
     "languages": [
         {
             "lang": "en",
