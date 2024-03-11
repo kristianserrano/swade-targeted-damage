@@ -46,7 +46,6 @@ Hooks.on('renderChatMessage', (msg, html, data) => {
         html[0].querySelector('.swade-roll-message button.calculate-wounds')?.addEventListener('click', async () => {
             // Collect the user's Targets
             const targets = data.user.targets;
-
             // If there are targets, get the damage and ap, and trigger the flow with the data.
             if (targets.size) {
                 const damage = roll.total;
@@ -67,24 +66,24 @@ async function triggerFlow(targets, damage, ap) {
         if (hasPlayerOwner) {
             // Get the player to whom this actor might be assigned.
             const activeAssignedPlayer = game.users.find((u) => u.active && u.character?.id === target.actor.id);
-            const activePlayerOwners = game.users.filter((u) => !u.isGM && u.active && target.actor.ownership[u.id] === 3);
+            const activePlayerOwners = game.users.filter((u) => !u.isGM && u.active && target.actor.ownership[u.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
 
-            if (activeAssignedPlayer || activePlayerOwners.length) {
-                if (!activeAssignedPlayer && game.user.isGM && activePlayerOwners.length > 1) {
+            if (activeAssignedPlayer || activePlayerOwners.length || target.actor.ownership.default === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
+                if (!activeAssignedPlayer && game.user.isGM && (activePlayerOwners.length > 1 || target.actor.ownership.default === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
                     const buttons = {};
-
-                    for (const player of activePlayerOwners) {
+                    const targetPlayers = activePlayerOwners.length ? activePlayerOwners : game.users.filter(u => !u.isGM && u.active);
+                    for (const player of targetPlayers) {
                         buttons[player.id] = {
                             label: player.name,
                             callback: () => {
-                                promptOtherUser(target.actor, player, damage, ap);
+                                promptOtherUser(target.document.uuid, player, damage, ap);
                             }
                         };
                     }
 
                     new Dialog({
                         title: game.i18n.format("SWADETargetedDamage.ChoosePlayerTitle"),
-                        content: `${game.i18n.format("SWADETargetedDamage.ChoosePlayerPrompt", { name: actor.name })}`,
+                        content: `${game.i18n.format("SWADETargetedDamage.ChoosePlayerPrompt", { name: target.name })}`,
                         buttons,
                         default: ""
                     }, { classes: ['swade-app'] }).render(true);
@@ -93,33 +92,32 @@ async function triggerFlow(targets, damage, ap) {
                     const playerOwner = !!activeAssignedPlayer ? activeAssignedPlayer : activePlayerOwners[0];
 
                     if (playerOwner === game.user) {
-                        await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
+                        await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
                     } else {
-                        promptOtherUser(target.actor, playerOwner, damage, ap);
+                        promptOtherUser(target.document.uuid, playerOwner, damage, ap);
                     }
                 }
             } else if (game.user.isGM) {
-                await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
+                await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
             }
         } else if (game.user.isGM) {
-            await new TargetedDamageApplicator(target.actor.uuid, damage, ap).render(true);
+            await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
         } else {
-            promptOtherUser(target.actor, game.users.activeGM, damage, ap);
+            promptOtherUser(target.document.uuid, game.users.activeGM, damage, ap);
         }
     }
 }
 
-function promptOtherUser(targetActor, targetUser, damage, ap) {
+function promptOtherUser(targetUuid, targetUser, damage, ap) {
     game.socket.emit(`module.${MODULE_ID}`, {
-        tokenActorUUID: targetActor.uuid,
+        targetUuid,
         targetUserId: targetUser?.id,
         damage,
         ap,
     });
 }
 
-function renderTargetedDamageApp({ tokenActorUUID, damage, ap, targetUserId }) {
+async function renderTargetedDamageApp({ targetUuid, damage, ap, targetUserId }) {
     if (game.userId !== targetUserId) return;
-
-    new TargetedDamageApplicator(tokenActorUUID, damage, ap, targetUserId).render(true);
+    new TargetedDamageApplicator(targetUuid, damage, ap, targetUserId).render(true);
 }
