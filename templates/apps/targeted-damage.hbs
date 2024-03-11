@@ -13,10 +13,10 @@
 
     {{{object.message}}}
 
-    {{#if (eq this.object.statusToApply 'wounded')}}
+    {{#if (eq object.statusToApply 'wounded')}}
     {{#if (and object.user.isGM (gt object.user.bennies 0))}}
-    <button type="button" class="benny-gm-soak" name="benny-gm-soak" data-is-reroll="{{#if object.bestSoakAttempt}}true{{else}}false{{/if}}">
-        {{#if object.bestSoakAttempt}}
+    <button type="button" class="benny-gm-soak" name="benny-gm-soak" data-is-reroll="{{object.attemptedSoak}}">
+        {{#if object.attemptedSoak}}
         {{localize "SWADE.DamageApplicator.RerollSoakDialog.GMBenny"}}
         {{else}}
         {{localize "SWADE.DamageApplicator.SoakDialog.GMBenny"}}
@@ -25,18 +25,18 @@
     {{/if}}
     {{#if (gt object.actor.bennies 0)}}
     <button type="button" class="benny-soak" name="benny-soak">
-        {{#if (not object.bestSoakAttempt)}}
-        {{localize "SWADE.DamageApplicator.SoakDialog.Benny"}}
-        {{else}}
+        {{#if object.attemptedSoak}}
         {{localize "SWADE.DamageApplicator.RerollSoakDialog.Benny"}}
+        {{else}}
+        {{localize "SWADE.DamageApplicator.SoakDialog.Benny"}}
         {{/if}}
     </button>
     {{/if}}
     <button type="button" class="free-soak" name="free-soak">
-        {{#if (not object.bestSoakAttempt)}}
-        {{localize "SWADE.DamageApplicator.SoakDialog.Free"}}
-        {{else}}
+        {{#if object.attemptedSoak}}
         {{localize "SWADE.DamageApplicator.RerollSoakDialog.Free"}}
+        {{else}}
+        {{localize "SWADE.DamageApplicator.SoakDialog.Free"}}
         {{/if}}
     </button>
     <button type="button" class="take-wounds" name="take-wounds">

@@ -7,6 +7,8 @@ export class TargetedDamageApplicator extends FormApplication {
         this.object.damage = damage;
         this.object.ap = ap;
         this.object.user = game.user;
+        this.object.attemptedSoak = false;
+        this.object.bestSoakAttempt = 0;
     }
 
     /** @override */
@@ -29,27 +31,14 @@ export class TargetedDamageApplicator extends FormApplication {
 
     /** @override */
     async getData(options = {}) {
-        this.object.actor = await fromUuid(this.object.targetActorUuid);
-        await this.calcWounds();
-
-        // Set Wounds text for message
-        this.object.woundsText = this.getWoundsText();
-
-        // If status is wounded...
-        if (this.object.statusToApply === 'shaken' && this.object.wounds === 0) {
-            // If Shaken, set message.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.ShakenPrompt", { name: this.object.actor.name });
-        } else if (this.object.statusToApply === "shaken" && this.object.wounds === 1) {
-            this.object.message = game.i18n.format("SWADETargetedDamage.WoundedFromShakenPrompt", { name: this.object.actor.name });
-        } else if (this.object.statusToApply === 'wounded') {
-            // Prompt to Soak the Wounds.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.WoundedPrompt", { name: this.object.actor.name, wounds: this.object.woundsText });
-        } else if (this.object.statusToApply === 'none') {
-            // If no status to apply because damage was too low, output a message saying such.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.UnharmedPrompt", { name: this.object.actor.name });
-        }
-
+        await this.refreshObject();
         return await super.getData(options);
+    }
+
+    /** @override */
+    async _render(force = false, options = {}) {
+        await super._render(force, options);
+        await this.refreshObject();
     }
 
     /** @override */
@@ -125,6 +114,28 @@ export class TargetedDamageApplicator extends FormApplication {
         });
     }
 
+    async refreshObject() {
+        this.object.actor = await fromUuid(this.object.targetActorUuid);
+        await this.calcWounds();
+
+        // Set Wounds text for message
+        this.object.woundsText = this.getWoundsText();
+
+        // If status is wounded...
+        if (this.object.statusToApply === 'shaken' && this.object.wounds === 0) {
+            // If Shaken, set message.
+            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.ShakenPrompt", { name: this.object.actor.name });
+        } else if (this.object.statusToApply === "shaken" && this.object.wounds === 1) {
+            this.object.message = game.i18n.format("SWADETargetedDamage.WoundedFromShakenPrompt", { name: this.object.actor.name });
+        } else if (this.object.statusToApply === 'wounded') {
+            // Prompt to Soak the Wounds.
+            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.WoundedPrompt", { name: this.object.actor.name, wounds: this.object.woundsText });
+        } else if (this.object.statusToApply === 'none') {
+            // If no status to apply because damage was too low, output a message saying such.
+            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.UnharmedPrompt", { name: this.object.actor.name });
+        }
+    }
+
     async rollGrittyDamage() {
         const injuryTable = await fromUuid(game.settings.get("swade", "injuryTable"));
         await injuryTable.draw();
@@ -175,16 +186,26 @@ export class TargetedDamageApplicator extends FormApplication {
         }
 
         // Roll Vigor and get the data.
-        let vigorRoll = await this.object.actor.rollAttribute('vigor', { isRerollable: false });
-        let message;
+        const vigorRoll = await this.object.actor.rollAttribute('vigor', {
+            title: game.i18n.localize('SWADE.DamageApplicator.SoakDialog.SoakRoll'),
+            flavour: game.i18n.localize('SWADE.DamageApplicator.SoakDialog.SoakRoll'),
+            additionalMods: soakModifiers,
+            isRerollable: false
+        });
         // Calculate how many Wounds have been Soaked with the roll
         const woundsSoaked = Math.floor(vigorRoll.total / 4);
-        // Get the number of current Wounds the Actor has.
-        const existingWounds = this.object.actor.system.wounds.value;
-        // Get the maximum amount of Wounds the Actor can suffer before Incapacitation.
-        const maxWounds = this.object.actor.system.wounds.max;
-        // Calculate how many Wounds are remaining after Soaking.
-        this.object.wounds -= woundsSoaked;
+
+        // If they already attempted to Soak, set Wounds remaining to whatever their best roll yielded so far.
+        if (woundsSoaked > this.object.bestSoakAttempt) {
+            // Restore original Wounds amount.
+            this.object.wounds += this.object.bestSoakAttempt;
+            // Replace best Soak attempt.
+            this.object.bestSoakAttempt = woundsSoaked;
+            // Subtract the wounds  soaked from the wounds to be applied.
+            this.object.wounds -= this.object.bestSoakAttempt;
+        }
+
+        let message;
 
         // If there are no remaining Wounds, output message that they Soaked all the Wounds.
         if (this.object.wounds <= 0) {
@@ -192,21 +213,7 @@ export class TargetedDamageApplicator extends FormApplication {
             await this.outputChat(message);
             this.close();
         } else {
-            // Otherwise, calculate how many Wounds the Actor now has.
-            this.object.wounds = existingWounds + this.object.wounds;
-
-            // Set the Wounds, but if it's beyond the maximum, set it to the maximum.
-            if (this.object.wounds > maxWounds) {
-                this.object.wounds = maxWounds;
-            }
-
-            // If they already attempted to Soak, set Wounds remaining to whatever their best roll yielded so far.
-            if (!this.object.bestSoakAttempt || (!!this.object.bestSoakAttempt && this.object.wounds < this.object.bestSoakAttempt)) {
-                this.object.bestSoakAttempt = this.object.wounds;
-            }
-
-            // Construct text for number of Wounds remaining.
-            this.object.woundsText = this.getWoundsText();
+            this.object.attemptedSoak = true;
             await this.render(true);
         }
     }
@@ -229,7 +236,7 @@ export class TargetedDamageApplicator extends FormApplication {
         // Calculate how much over.
         const excess = this.object.damage - newT;
         // Translate damage raises to Wounds.
-        this.object.wounds = Math.floor(excess / 4);
+        this.object.wounds = this.object.bestSoakAttempt > 0 ? this.object.wounds : Math.floor(excess / 4);
         // Check if Wound Cap is in play.
         const woundCapEnabled = game.settings.get('swade', 'woundCap');
 
