@@ -1,0 +1,56 @@
+<form>
+    <fieldset>
+        <legend>{{localize 'SWADE.DamageApplicator.SoakDialog.AdjustDamage'}}</legend>
+        <div class="form-group">
+            <label for="damage">{{localize 'SWADE.Dmg'}}</label>
+            <input type="number" name="damage" id="damage" value="{{object.damage}}" autofocus>
+        </div>
+        <div class="form-group">
+            <label for="ap">{{localize 'SWADE.Ap'}}</label>
+            <input type="number" name="ap" id="ap" value="{{object.ap}}">
+        </div>
+    </fieldset>
+
+    {{{object.message}}}
+
+    {{#if (eq object.statusToApply 'wounded')}}
+    {{#if (and object.user.isGM (gt object.user.bennies 0))}}
+    <button type="button" class="benny-gm-soak" name="benny-gm-soak" data-is-reroll="{{object.attemptedSoak}}">
+        {{#if object.attemptedSoak}}
+        {{localize "SWADE.DamageApplicator.RerollSoakDialog.GMBenny"}}
+        {{else}}
+        {{localize "SWADE.DamageApplicator.SoakDialog.GMBenny"}}
+        {{/if}}
+    </button>
+    {{/if}}
+    {{#if (gt object.actor.bennies 0)}}
+    <button type="button" class="benny-soak" name="benny-soak">
+        {{#if object.attemptedSoak}}
+        {{localize "SWADE.DamageApplicator.RerollSoakDialog.Benny"}}
+        {{else}}
+        {{localize "SWADE.DamageApplicator.SoakDialog.Benny"}}
+        {{/if}}
+    </button>
+    {{/if}}
+    <button type="button" class="free-soak" name="free-soak">
+        {{#if object.attemptedSoak}}
+        {{localize "SWADE.DamageApplicator.RerollSoakDialog.Free"}}
+        {{else}}
+        {{localize "SWADE.DamageApplicator.SoakDialog.Free"}}
+        {{/if}}
+    </button>
+    <button type="button" class="take-wounds" name="take-wounds">
+        {{localize "SWADE.DamageApplicator.SoakDialog.TakeWounds" wounds=object.woundsText}}
+    </button>
+    {{/if}}
+    {{#if (eq object.statusToApply 'shaken')}}
+    <button type="button" class="apply-shaken" name="apply-shaken">
+        {{localize "SWADE.DamageApplicator.SoakDialog.ApplyShaken"}}
+    </button>
+    {{/if}}
+    {{#if (eq object.statusToApply 'none')}}
+    <button type="button" class="no-damage" name="no-damage">
+        {{localize "Close"}}
+    </button>
+    {{/if}}
+</form>

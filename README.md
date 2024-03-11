@@ -1,4 +1,4 @@
-# SWADE Wounds Calculator
+# SWADE Targeted Damage
 
 ## How to Use This Module
 
@@ -15,7 +15,7 @@
 
 ### Supported Setting Rules
 
-The following Setting Rules can be employed via the module settings.
+The following Setting Rules can be employed via the SWADE system settings.
 
 - Wound Cap
 - Gritty Damage
