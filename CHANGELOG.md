@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v2.0.2
+
+-Fixes actor's wounds being set beyond their max wounds.
+
 ## v2.0.1
 
 - Fixes player chooser dialog.
