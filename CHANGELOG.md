@@ -2,7 +2,8 @@
 
 ## v2.0.2
 
--Fixes actor's wounds being set beyond their max wounds.
+- Fixes actor's wounds being set beyond their max wounds.
+- Change reference to SwadeActiveEffect#label to SwadeActiveEffect#name (deprecation warning).
 
 ## v2.0.1
 
