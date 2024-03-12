@@ -144,7 +144,7 @@ export class TargetedDamageApplicator extends FormApplication {
     // for applying the Incapacitated Status Effect
     async applyIncapacitated() {
         // Check if they're already Incapacitated; we don't need to add another instance if so.
-        const isIncapacitated = this.object.token.actor.effects.some((e) => e.label === game.i18n.localize('SWADE.Incap'));
+        const isIncapacitated = this.object.token.actor.effects.some((e) => e.name === game.i18n.localize('SWADE.Incap'));
 
         // If there is not such Status Effect, then apply it.
         if (!isIncapacitated) {
