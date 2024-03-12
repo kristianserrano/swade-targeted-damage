@@ -1,7 +1,5 @@
 # SWADE Targeted Damage
 
-(Previously known as SWADE Wounds Calculator)
-
 ## v2.0.1
 
 - Fixes player chooser dialog.
