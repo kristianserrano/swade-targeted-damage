@@ -78,7 +78,7 @@ export class TargetedDamageApplicator extends FormApplication {
             if (totalActorWounds > this.object.token.actor.system.wounds.max) {
                 await this.applyIncapacitated();
                 // Cap the total Wounds at the Actor's max Wounds.
-                totalActorWounds === this.object.token.actor.system.wounds.max;
+                totalActorWounds = this.object.token.actor.system.wounds.max;
             }
 
             // 3. Update the Actor's Wounds.
