@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v2.0.3
+
+- Helps if I remember to bundle in the template files.
+
 ## v2.0.2
 
 - Fixes actor's wounds being set beyond their max wounds.
