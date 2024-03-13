@@ -30,7 +30,7 @@ Hooks.on('renderChatMessage', (msg, html, data) => {
         const icon = document.createElement('i');
         icon.classList.add('fa-solid', 'fa-meter-droplet');
         button.append(icon);
-        button.insertAdjacentHTML('beforeend', game.i18n.localize('SWADETargetedDamage.Apply'));
+        button.insertAdjacentHTML('beforeend', game.i18n.localize('SWADETargetedDamage.ResolveDamage'));
         const buttonHTML = button?.outerHTML;
         const parentElement = button?.parentElement;
         button.remove();
@@ -82,8 +82,8 @@ async function triggerFlow(targets, damage, ap) {
                     }
 
                     new Dialog({
-                        title: game.i18n.format("SWADETargetedDamage.ChoosePlayerTitle"),
-                        content: `${game.i18n.format("SWADETargetedDamage.ChoosePlayerPrompt", { name: target.name })}`,
+                        title: game.i18n.format("SWADETargetedDamage.ChoosePlayer.Title"),
+                        content: `${game.i18n.format("SWADETargetedDamage.ChoosePlayer.Prompt", { name: target.name })}`,
                         buttons,
                         default: ""
                     }, { classes: ['swade-app'] }).render(true);

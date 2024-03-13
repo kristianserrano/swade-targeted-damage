@@ -90,18 +90,28 @@ export class TargetedDamageApplicator extends FormApplication {
             }
 
             // Output chat message.
-            const message = game.i18n.format("SWADETargetedDamage.IsShakenWithWounds", { name: this.object.token.name, wounds: this.getWoundsText() });
+            const message = game.i18n.format("SWADETargetedDamage.Result.ShakenWithWounds", { name: this.object.token.name, wounds: this.getWoundsText() });
             await this.outputChat(message);
             this.close();
         });
         html[0].querySelector('.apply-shaken')?.addEventListener('click', async () => {
             // Apply Shaken Status Effect.
             this.applyShaken();
-            let message = game.i18n.format("SWADE.DamageApplicator.Result.IsShaken", { name: this.object.token.name });
+            let message = game.i18n.format("SWADETargetedDamage.Result.Shaken", { name: this.object.token.name });
 
-            if (this.object.wounds === 1 && this.object.statusToApply === 'shaken') {
-                await this.object.token.actor.update({ 'system.wounds.value': this.object.token.actor.system.wounds.value + this.object.wounds });
-                message = game.i18n.format("SWADETargetedDamage.WoundedFromShaken", { name: this.object.token.name });
+            if (this.object.wounds === 1) {
+                // Calculate the total amount of Wounds the Actor will have.
+                let totalActorWounds = this.object.token.actor.system.wounds.value + this.object.wounds;
+
+                // Apply Incapacitated if the total wounds will be greater than max Wounds.
+                if (totalActorWounds > this.object.token.actor.system.wounds.max) {
+                    await this.applyIncapacitated();
+                    // Cap the total Wounds at the Actor's max Wounds.
+                    totalActorWounds = this.object.token.actor.system.wounds.max;
+                }
+
+                await this.object.token.actor.update({ 'system.wounds.value': totalActorWounds });
+                message = game.i18n.format("SWADETargetedDamage.Result.WoundedFromShaken", { name: this.object.token.name });
             }
 
             // Output chat message.
@@ -109,7 +119,7 @@ export class TargetedDamageApplicator extends FormApplication {
         });
         html[0].querySelector('.no-damage')?.addEventListener('click', async () => {
             // Output chat message.
-            const message = game.i18n.format("SWADE.DamageApplicator.Result.NoSignificantDamage", { name: this.object.token.name });
+            const message = game.i18n.format("SWADETargetedDamage.Result.NoSignificantDamage", { name: this.object.token.name });
             await this.outputChat(message); this.close();
         });
     }
@@ -124,15 +134,15 @@ export class TargetedDamageApplicator extends FormApplication {
         // If status is wounded...
         if (this.object.statusToApply === 'shaken' && this.object.wounds === 0) {
             // If Shaken, set message.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.ShakenPrompt", { name: this.object.token.name });
+            this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.Shaken", { name: this.object.token.name });
         } else if (this.object.statusToApply === "shaken" && this.object.wounds === 1) {
-            this.object.message = game.i18n.format("SWADETargetedDamage.WoundedFromShakenPrompt", { name: this.object.token.name });
+            this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.WoundedFromShaken", { name: this.object.token.name });
         } else if (this.object.statusToApply === 'wounded') {
             // Prompt to Soak the Wounds.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.WoundedPrompt", { name: this.object.token.name, wounds: this.object.woundsText });
+            this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.WoundsAboutToBeTaken", { name: this.object.token.name, wounds: this.object.woundsText });
         } else if (this.object.statusToApply === 'none') {
             // If no status to apply because damage was too low, output a message saying such.
-            this.object.message = game.i18n.format("SWADE.DamageApplicator.SoakDialog.UnharmedPrompt", { name: this.object.token.name });
+            this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.Unharmed", { name: this.object.token.name });
         }
     }
 
@@ -166,7 +176,7 @@ export class TargetedDamageApplicator extends FormApplication {
     async attemptSoak(options = {}) {
         const soakModifiers = [
             {
-                label: game.i18n.localize('SWADE.DamageApplicator.SoakModifier'),
+                label: game.i18n.localize('SWADETargetedDamage.SoakModifier'),
                 value: this.object.token.actor.system.attributes.vigor.soakBonus,
             },
         ];
@@ -187,11 +197,12 @@ export class TargetedDamageApplicator extends FormApplication {
 
         // Roll Vigor and get the data.
         const vigorRoll = await this.object.token.actor.rollAttribute('vigor', {
-            title: game.i18n.localize('SWADE.DamageApplicator.SoakDialog.SoakRoll'),
-            flavour: game.i18n.localize('SWADE.DamageApplicator.SoakDialog.SoakRoll'),
+            title: game.i18n.localize('SWADETargetedDamage.SoakRoll'),
+            flavour: game.i18n.localize('SWADETargetedDamage.SoakRoll'),
             additionalMods: soakModifiers,
             isRerollable: false,
         });
+
         if (vigorRoll) {
             // Calculate how many Wounds have been Soaked with the roll
             const woundsSoaked = Math.floor(vigorRoll.total / 4);
@@ -210,11 +221,12 @@ export class TargetedDamageApplicator extends FormApplication {
 
             // If there are no remaining Wounds, output message that they Soaked all the Wounds.
             if (this.object.wounds <= 0) {
-                message = game.i18n.format("SWADE.DamageApplicator.Result.SoakedAll", { name: this.object.token.name });
+                message = game.i18n.format("SWADETargetedDamage.Result.SoakedAll", { name: this.object.token.name });
                 await this.outputChat(message);
                 this.close();
             } else {
                 this.object.attemptedSoak = true;
+                this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.Reroll", { name: this.object.token.name });
                 await this.render(true);
             }
         }

@@ -1,37 +1,45 @@
 {
     "SWADETargetedDamage": {
         "Title": "SWADE Targeted Damage",
-        "Apply": "Resolve Damage for Target",
-        "SoakTitle": "Targeted Damage: Roll to Soak Wounds for {name}?",
-        "SoakDmgPrompt": "<p>{name} is about to take {wounds}. Do you want to attempt to Soak?</p>",
-        "SoakBenny": "Spend a Benny to Soak",
-        "SoakFree": "Soak for Free",
-        "ChoosePlayerTitle": "Targeted Damage: Choose a Player",
-        "ChoosePlayerPrompt": "<p>Which player would like to manage the damage for {name}?</p>",
-        "RerollSoakTitle": "Targeted Damage: Reroll to Soak Wounds for {name}?",
-        "RerollSoakDmgPrompt": "<p>{name} is about to take {wounds}. Do you want to reroll the Soak roll?</p>",
-        "RerollSoakBenny": "Spend a Benny to Reroll",
-        "RerollSoakFree": "Reroll for Free",
-        "TakeWounds": "Take {wounds}",
+        "ResolveDamage": "Resolve Damage for Target",
         "AdjustDamage": "Adjust Damage",
-        "AdjustDamageTitle": "Targeted Damage: Adjust Damage for {name}",
-        "AdjustDamagePrompt": "<p>Adjust damage for any abilities and effects {name} might have?</p>",
-        "WoundedFromShakenPrompt": "{name} is already Shaken and is about to take 1 Wound!</p>",
-        "WoundsAboutToBeTaken": "<p><strong>{name}</strong> is about to take <strong>{wounds}</strong>!</p>",
-        "NoSignificantDamage": "<p><strong>{name}</strong> suffers no significant damage.</p>",
-        "SoakedAll": "<p><strong>{name}</strong> Soaked all Wounds and is not Shaken!</p>",
-        "Incapacitated": "<p><strong>{name}</strong> is <strong>Incapacitated!</strong></p>",
-        "IsShaken": "<p><strong>{name}</strong> is <strong>Shaken</strong>!</p>",
-        "IsShakenWithWounds": "<p><strong>{name}</strong> takes <strong>{wounds}</strong> and is <strong>Shaken</strong>!</p>",
-        "WoundedFromShaken": "<p><strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!</p>",
-        "Calculate": "Calculate Wounds",
-        "NotHarmed": "Not Harmed",
-        "Wound": "Wound",
-        "Wounds": "Wounds",
-        "Is": "is",
-        "Takes": "takes",
+        "SoakRoll": "Soak Roll",
+        "SoakModifier": "Soak Modifier",
+        "ChoosePlayer": {
+            "Title": "Targeted Damage: Choose a Player",
+            "Prompt": "<p>Which player would like to manage the damage for {name}?</p>"
+        },
+        "Prompt": {
+            "Unharmed": "<p><strong>{name}</strong> might be unharmed.</p>",
+            "Shaken": "<p><strong>{name}</strong> is about to become Shaken.</p>",
+            "WoundedFromShaken": "<strong>{name}</strong> is already Shaken and is about to take <strong>1 Wound</strong>!</p>",
+            "WoundsAboutToBeTaken": "<p><strong>{name}</strong> is about to take <strong>{wounds}</strong>!</p>",
+            "Reroll": "<p><strong>{name}</strong> is about to take {wounds}. Do you want to reroll the Soak roll?</p>"
+        },
+        "Button": {
+            "Soak": {
+                "GMBenny": "Spend a GM Benny to Soak",
+                "Benny": "Spend a Benny to Soak",
+                "Free": "Soak for Free",
+                "Reroll": {
+                    "GMBenny": "Spend a GM Benny to Reroll",
+                    "Benny": "Spend a Benny to Reroll",
+                    "Free": "Reroll for Free"
+                }
+            },
+            "ApplyShaken": "Apply Shaken Status",
+            "TakeWounds": "Take {wounds}"
+        },
+        "Result": {
+            "NoSignificantDamage": "<p><strong>{name}</strong> suffers no significant damage.</p>",
+            "SoakedAll": "<p><strong>{name}</strong> Soaked all Wounds and is not Shaken!</p>",
+            "Incapacitated": "<p><strong>{name}</strong> is <strong>Incapacitated!</strong></p>",
+            "Shaken": "<p><strong>{name}</strong> is <strong>Shaken</strong>!</p>",
+            "ShakenWithWounds": "<p><strong>{name}</strong> takes <strong>{wounds}</strong> and is <strong>Shaken</strong>!</p>",
+            "WoundedFromShaken": "<p><strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!</p>"
+        },
         "Notifications": {
-            "SelectTokens": "Please select one or more Targets."
+            "SelectTokens": "Please target one or more Tokens."
         }
     }
 }
