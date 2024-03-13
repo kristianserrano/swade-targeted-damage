@@ -1,5 +1,10 @@
 # SWADE Targeted Damage
 
+## v2.0.4
+
+- Fixed applying wounds from second shaken.
+- Reorganized i18n strings.
+
 ## v2.0.3
 
 - Helps if I remember to bundle in the template files.
