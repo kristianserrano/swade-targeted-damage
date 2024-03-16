@@ -1,5 +1,10 @@
 # SWADE Targeted Damage
 
+## v2.1.0
+
+- Adds setting to exclude a Target's defense values (i.e., Toughness and Armor) from the results Chat Message
+- Results Chat Message now includes the original rolled damage and AP if either was modified while resolving the damage.
+
 ## v2.0.4
 
 - Fixed applying wounds from second shaken.
