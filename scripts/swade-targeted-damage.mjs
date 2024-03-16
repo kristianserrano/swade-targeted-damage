@@ -2,6 +2,17 @@ import { TargetedDamageApplicator } from "./TargetedDamageApplicator.mjs";
 
 export const MODULE_ID = "swade-targeted-damage";
 
+Hooks.on('init', () => {
+    game.settings.register(MODULE_ID, 'hide-defense-values', {
+        name: game.i18n.localize('SWADETargetedDamage.HideDefenseValues.Name'),
+        hint: game.i18n.localize('SWADETargetedDamage.HideDefenseValues.Hint'),
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: false,
+    });
+});
+
 Hooks.on('setup', () => {
     loadTemplates([
         `modules/${MODULE_ID}/templates/apps/targeted-damage.hbs`,

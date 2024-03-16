@@ -4,6 +4,8 @@ export class TargetedDamageApplicator extends FormApplication {
     constructor(tokenUuid, damage, ap) {
         super();
         this.object.tokenUuid = tokenUuid;
+        this.object.rolledDamage = damage;
+        this.object.rolledAP = ap;
         this.object.damage = damage;
         this.object.ap = ap;
         this.object.user = game.user;
@@ -281,17 +283,24 @@ export class TargetedDamageApplicator extends FormApplication {
     }
 
     async outputChat(message) {
-        const content = await renderTemplate(`/modules/${MODULE_ID}/templates/chat/damage-result.hbs`, {
+        const msgData = {
             message,
             ap: this.object.ap,
             damage: this.object.damage,
-            toughness: this.object.token.actor.system.stats.toughness.value,
-            armor: this.object.token.actor.system.stats.toughness.armor,
-        });
+            rolledAP: this.object.rolledAP,
+            rolledDamage: this.object.rolledDamage,
+            isAdjusted: this.object.rolledAP !== this.object.ap || this.object.rolledDamage !== this.object.damage,
+        }
+
+        if (!game.settings.get(MODULE_ID, 'hide-defense-values')) {
+            msgData.toughness = this.object.token.actor.system.stats.toughness.value;
+            msgData.armor = this.object.token.actor.system.stats.toughness.armor;
+        }
+
+        const content = await renderTemplate(`/modules/${MODULE_ID}/templates/chat/damage-result.hbs`, msgData);
 
         const chatMessageData = {
             content,
-            //speaker: ChatMessage.getSpeaker({ token: this.object.token }),
         }
         await ChatMessage.create(chatMessageData);
     }

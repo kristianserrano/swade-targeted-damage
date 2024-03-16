@@ -5,6 +5,10 @@
         "AdjustDamage": "Adjust Damage",
         "SoakRoll": "Soak Roll",
         "SoakModifier": "Soak Modifier",
+        "HideDefenseValues": {
+            "Name": "Hide Target's Defense Values",
+            "Hint": "Excludes the Target's defense values (Toughness and Armor) from the results Chat Message."
+        },
         "ChoosePlayer": {
             "Title": "Targeted Damage: Choose a Player",
             "Prompt": "<p>Which player would like to manage the damage for {name}?</p>"
@@ -31,12 +35,15 @@
             "TakeWounds": "Take {wounds}"
         },
         "Result": {
-            "NoSignificantDamage": "<p><strong>{name}</strong> suffers no significant damage.</p>",
-            "SoakedAll": "<p><strong>{name}</strong> Soaked all Wounds and is not Shaken!</p>",
-            "Incapacitated": "<p><strong>{name}</strong> is <strong>Incapacitated!</strong></p>",
-            "Shaken": "<p><strong>{name}</strong> is <strong>Shaken</strong>!</p>",
-            "ShakenWithWounds": "<p><strong>{name}</strong> takes <strong>{wounds}</strong> and is <strong>Shaken</strong>!</p>",
-            "WoundedFromShaken": "<p><strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!</p>"
+            "RolledDamage": "Rolled Damage",
+            "ResolvedDamage": "Resolved Damage",
+            "TargetDefenses": "Target's Defenses",
+            "NoSignificantDamage": "<strong>{name}</strong> suffers no significant damage.",
+            "SoakedAll": "<strong>{name}</strong> Soaked all Wounds and is not Shaken!",
+            "Incapacitated": "<strong>{name}</strong> is <strong>Incapacitated!</strong>",
+            "Shaken": "<strong>{name}</strong> is <strong>Shaken</strong>!",
+            "ShakenWithWounds": "<strong>{name}</strong> takes <strong>{wounds}</strong> and is <strong>Shaken</strong>!",
+            "WoundedFromShaken": "<strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!"
         },
         "Notifications": {
             "SelectTokens": "Please target one or more Tokens."
