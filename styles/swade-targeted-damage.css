@@ -1,7 +1,7 @@
 .swade-targeted-damage.resolved-damage {
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    gap:1em;
 
     & .swade-targeted-damage-result-message {
         margin: 0;
