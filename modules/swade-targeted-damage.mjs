@@ -37,18 +37,21 @@ Hooks.on('renderChatMessage', (msg, html, data) => {
     // If the chat message is a damage roll...
     if (roll.constructor.name === 'DamageRoll') {
         const button = html[0].querySelector('.swade-roll-message button.calculate-wounds');
-        button.textContent = '';
-        const icon = document.createElement('i');
-        icon.classList.add('fa-solid', 'fa-meter-droplet');
-        button.append(icon);
-        button.insertAdjacentHTML('beforeend', game.i18n.localize('SWADETargetedDamage.ResolveDamage'));
-        const buttonHTML = button?.outerHTML;
-        const parentElement = button?.parentElement;
-        button.remove();
+        if (button) {
+            button.textContent = '';
+            const icon = document.createElement('i');
+            icon.classList.add('fa-solid', 'fa-meter-droplet');
+            button.append(icon);
+            button.insertAdjacentHTML('beforeend', game.i18n.localize('SWADETargetedDamage.ResolveDamage'));
+            const buttonHTML = button?.outerHTML;
+            const parentElement = button?.parentElement;
+            button.remove();
 
-        if (msg._source.user === game.userId || game.user.isGM) {
-            parentElement?.insertAdjacentHTML('afterbegin', buttonHTML);
+            if (msg._source.user === game.userId || game.user.isGM) {
+                parentElement?.insertAdjacentHTML('afterbegin', buttonHTML);
+            }
         }
+
         if (msg._source.user !== game.userId) {
             const rerollButtons = html[0].querySelectorAll('.benny-reroll, .free-reroll');
             rerollButtons.forEach((b) => b.remove());
@@ -130,5 +133,5 @@ function promptOtherUser(targetUuid, targetUser, damage, ap) {
 
 async function renderTargetedDamageApp({ targetUuid, damage, ap, targetUserId }) {
     if (game.userId !== targetUserId) return;
-    new TargetedDamageApplicator(targetUuid, damage, ap, targetUserId).render(true);
+    await new TargetedDamageApplicator(targetUuid, damage, ap, targetUserId).render(true);
 }
