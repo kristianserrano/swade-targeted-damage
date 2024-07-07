@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v2.2.0
+
+- Adds Foundry v12 and SWADE v4.0 support.
+
 ## v2.1.0
 
 - Adds setting to exclude a Target's defense values (i.e., Toughness and Armor) from the results Chat Message
