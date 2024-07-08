@@ -26,9 +26,6 @@
             }
         ]
     },
-    "system": [
-        "swade"
-    ],
     "esmodules": [
         "modules/swade-targeted-damage.mjs"
     ],
