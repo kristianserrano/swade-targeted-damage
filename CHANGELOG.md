@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v2.2.1
+
+- Housekeeping on the manifest file.
+
 ## v2.2.0
 
 - Adds Foundry v12 and SWADE v4.0 support.
