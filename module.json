@@ -1,18 +1,21 @@
 {
     "id": "swade-targeted-damage",
     "title": "SWADE Targeted Damage",
-    "description": "A module that allows for using targeted tokens to resolve damage rolls.",
-    "version": "2.0.0",
     "authors": [
         {
             "name": "Kristian Serrano",
-            "email": "kristianserrano@gmail.com",
             "url": "https://immaterialplane.com",
-            "discord": "Kristian Serrano#5077",
-            "twitter": "@KristianSerrano",
-            "reddit": "u/kristianserrano"
+            "discord": "kristianserrano"
         }
     ],
+    "description": "A module that allows for using targeted tokens to resolve damage rolls.",
+    "version": "",
+    "url": "",
+    "manifest": "",
+    "download": "",
+    "changelog": "",
+    "readme": "",
+    "bugs": "",
     "compatibility": {
         "minimum": 11,
         "verified": 12
@@ -39,9 +42,6 @@
         }
     ],
     "socket": true,
-    "url": "This is auto replaced",
-    "manifest": "This is auto replaced",
-    "download": "This is auto replaced",
     "flags": {
         "hotReload": {
             "extensions": [
