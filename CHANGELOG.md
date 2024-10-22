@@ -1,5 +1,10 @@
 # SWADE Targeted Damage
 
+## v2.3.0
+
+- Updated minimum Foundry VTT version to v12.
+- Resolves deprecation warnings.
+
 ## v2.2.1
 
 - Housekeeping on the manifest file.

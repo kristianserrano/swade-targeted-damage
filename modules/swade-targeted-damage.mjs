@@ -47,12 +47,12 @@ Hooks.on('renderChatMessage', (msg, html, data) => {
             const parentElement = button?.parentElement;
             button.remove();
 
-            if (msg._source.user === game.userId || game.user.isGM) {
+            if (msg._source.author === game.userId || game.user.isGM) {
                 parentElement?.insertAdjacentHTML('afterbegin', buttonHTML);
             }
         }
 
-        if (msg._source.user !== game.userId) {
+        if (msg._source.author !== game.userId) {
             const rerollButtons = html[0].querySelectorAll('.benny-reroll, .free-reroll');
             rerollButtons.forEach((b) => b.remove());
         }
