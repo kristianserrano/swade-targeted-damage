@@ -11,7 +11,7 @@
         },
         "ChoosePlayer": {
             "Title": "Targeted Damage: Choose a Player",
-            "Prompt": "<p>Which player would like to manage the damage for {name}?</p>"
+            "Prompt": "<p>Select the player manage the damage for {name}.</p>"
         },
         "Prompt": {
             "Unharmed": "<p><strong>{name}</strong> might be unharmed.</p>",

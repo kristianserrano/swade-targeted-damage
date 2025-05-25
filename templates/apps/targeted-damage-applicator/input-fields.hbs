@@ -1,0 +1,14 @@
+<fieldset>
+    <legend>{{localize 'SWADETargetedDamage.AdjustDamage'}}</legend>
+    <div class="form-group">
+        <label for="damage-{{actor.id}}">{{localize 'SWADE.Dmg'}}</label>
+        <input type="number" id="damage-{{actor.id}}" name="damage" value="{{object.damage}}" min="0" autofocus>
+    </div>
+    <div class="form-group">
+        <label for="ap-{{actor.id}}">{{localize 'SWADE.Ap'}}</label>
+        <input id="ap-{{actor.id}}" type="number" name="ap" value="{{object.ap}}" min="0">
+    </div>
+    <button class="submit-input-change">
+        {{localize 'Submit'}}
+    </button>
+</fieldset>

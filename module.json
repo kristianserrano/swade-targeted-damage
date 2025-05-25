@@ -17,22 +17,26 @@
     "readme": "",
     "bugs": "",
     "compatibility": {
-        "minimum": 12,
-        "verified": 12
+        "minimum": 13,
+        "verified": 13
     },
     "relationships": {
         "systems": [
             {
                 "id": "swade",
                 "type": "system",
-                "manifest": "https://gitlab.com/api/v4/projects/16269883/packages/generic/swade/latest/system.json"
+                "compatibility": {
+                    "minimum": "5"
+                }
             }
         ]
     },
     "esmodules": [
         "modules/swade-targeted-damage.mjs"
     ],
-    "styles": ["styles/swade-targeted-damage.css"],
+    "styles": [
+        "styles/swade-targeted-damage.css"
+    ],
     "packs": [],
     "languages": [
         {
@@ -55,7 +59,8 @@
                 "styles/swade-targeted-damage.css",
                 "modules/swade-targeted-damage.mjs",
                 "modules/apps/TargetedDamageApplicator.mjs",
-                "templates/apps/targeted-damage.hbs"
+                "templates/apps/targeted-damage-applicator/buttons.hbs",
+                "templates/apps/targeted-damage-applicator/input-fields.hbs"
             ]
         }
     }

@@ -1,21 +1,10 @@
-<form>
-    <fieldset>
-        <legend>{{localize 'SWADETargetedDamage.AdjustDamage'}}</legend>
-        <div class="form-group">
-            <label for="damage">{{localize 'SWADE.Dmg'}}</label>
-            <input type="number" name="damage" id="damage" value="{{object.damage}}" autofocus>
-        </div>
-        <div class="form-group">
-            <label for="ap">{{localize 'SWADE.Ap'}}</label>
-            <input type="number" name="ap" id="ap" value="{{object.ap}}">
-        </div>
-    </fieldset>
-
-    {{{object.message}}}
+<div class="targeted-damage-applicator-footer">
+    <p>{{{object.message}}}</p>
 
     {{#if (eq object.statusToApply 'wounded')}}
+
     {{#if (and object.user.isGM (gt object.user.bennies 0))}}
-    <button type="button" class="benny-gm-soak" name="benny-gm-soak" data-is-reroll="{{object.attemptedSoak}}">
+    <button type="button" class="benny-gm-soak" name="benny-gm-soak" data-action="bennyGMSoak" data-is-reroll="{{object.attemptedSoak}}">
         {{#if object.attemptedSoak}}
         {{localize "SWADETargetedDamage.Button.Soak.Reroll.GMBenny"}}
         {{else}}
@@ -23,8 +12,9 @@
         {{/if}}
     </button>
     {{/if}}
+
     {{#if (gt object.token.actor.bennies 0)}}
-    <button type="button" class="benny-soak" name="benny-soak">
+    <button type="button" data-action="bennySoak">
         {{#if object.attemptedSoak}}
         {{localize "SWADETargetedDamage.Button.Soak.Reroll.Benny"}}
         {{else}}
@@ -32,25 +22,29 @@
         {{/if}}
     </button>
     {{/if}}
-    <button type="button" class="free-soak" name="free-soak">
+
+    <button type="button" data-action="freeSoak">
         {{#if object.attemptedSoak}}
         {{localize "SWADETargetedDamage.Button.Soak.Reroll.Free"}}
         {{else}}
         {{localize "SWADETargetedDamage.Button.Soak.Free"}}
         {{/if}}
     </button>
-    <button type="button" class="take-wounds" name="take-wounds">
+    <button type="button" data-action="takeWounds">
         {{localize "SWADETargetedDamage.Button.TakeWounds" wounds=object.woundsText}}
     </button>
+
     {{/if}}
+
     {{#if (eq object.statusToApply 'shaken')}}
-    <button type="button" class="apply-shaken" name="apply-shaken">
+    <button type="button" data-action="applyShaken">
         {{localize "SWADETargetedDamage.Button.ApplyShaken"}}
     </button>
     {{/if}}
+
     {{#if (eq object.statusToApply 'none')}}
-    <button type="button" class="no-damage" name="no-damage">
+    <button type="button" data-action="noDamage">
         {{localize "Close"}}
     </button>
     {{/if}}
-</form>
+</div>
