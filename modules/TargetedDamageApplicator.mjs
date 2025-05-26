@@ -85,7 +85,10 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
 
     static async updateObject(event, form, formData) {
         this.object = foundry.utils.mergeObject(this.object, formData.object);
-        await this.render({ force: true });
+        await this.render({
+            parts: ['buttons'],
+            force: true,
+        });
     }
 
     static async onBennyGMSoak(event, target) {
