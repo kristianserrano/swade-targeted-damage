@@ -1,5 +1,10 @@
 # SWADE Targeted Damage
 
+## v3.0.0
+
+- Updates minimum Foundry VTT version to 13.
+- Converts apps and dialogs to AppV2.
+
 ## v2.3.0
 
 - Updated minimum Foundry VTT version to v12.
