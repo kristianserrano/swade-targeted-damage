@@ -43,7 +43,8 @@
             "Incapacitated": "<strong>{name}</strong> is <strong>Incapacitated!</strong>",
             "Shaken": "<strong>{name}</strong> is <strong>Shaken</strong>!",
             "ShakenWithWounds": "<strong>{name}</strong> takes <strong>{wounds}</strong> and is <strong>Shaken</strong>!",
-            "WoundedFromShaken": "<strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!"
+            "WoundedFromShaken": "<strong>{name}</strong> is already <strong>Shaken</strong> and takes <strong>1 Wound</strong>!",
+            "Details": "View Details"
         },
         "Notifications": {
             "SelectTokens": "Please target one or more Tokens."
