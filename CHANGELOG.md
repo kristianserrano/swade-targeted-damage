@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v3.0.1
+
+- Places damage details inside of an expandable details element.
+
 ## v3.0.0
 
 - Updates minimum Foundry VTT version to 13.
