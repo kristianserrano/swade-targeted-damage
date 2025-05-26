@@ -16,7 +16,7 @@
         "Prompt": {
             "Unharmed": "<p><strong>{name}</strong> might be unharmed.</p>",
             "Shaken": "<p><strong>{name}</strong> is about to become Shaken.</p>",
-            "WoundedFromShaken": "<strong>{name}</strong> is already Shaken and is about to take <strong>1 Wound</strong>!</p>",
+            "WoundedFromShaken": "<p><strong>{name}</strong> is already Shaken and is about to take <strong>1 Wound</strong>!</p>",
             "WoundsAboutToBeTaken": "<p><strong>{name}</strong> is about to take <strong>{wounds}</strong>!</p>",
             "Reroll": "<p><strong>{name}</strong> is about to take {wounds}. Do you want to reroll the Soak roll?</p>"
         },
