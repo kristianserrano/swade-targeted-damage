@@ -124,9 +124,12 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
         // 3. Update the Actor's Wounds.
         await this.actor.update({ 'system.wounds.value': totalActorWounds });
 
-        // Apply Gritty Damage if the setting rule is enabled
-        if (game.settings.get('swade', 'grittyDamage')) {
-            await this.rollGrittyDamage();
+        // 4. Apply Gritty Damage if the setting rule is enabled and a table is configured.
+        const injuryTable = await fromUuid(game.settings.get("swade", "injuryTable"))
+
+        if (game.settings.get('swade', 'grittyDamage') && injuryTable) {
+            // If the Injury Table is set, roll for Gritty Damage.
+            await injuryTable.draw();
         }
 
         // Output chat message.
@@ -184,11 +187,6 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
             // If no status to apply because damage was too low, output a message saying such.
             this.object.message = game.i18n.format("SWADETargetedDamage.Prompt.Unharmed", { name: this.actor.name });
         }
-    }
-
-    async rollGrittyDamage() {
-        const injuryTable = await fromUuid(game.settings.get("swade", "injuryTable"));
-        await injuryTable.draw();
     }
 
     // for applying the Incapacitated Status Effect
