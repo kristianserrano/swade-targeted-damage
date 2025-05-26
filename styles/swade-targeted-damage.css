@@ -10,12 +10,12 @@
         }
 
         .targeted-damage-applicator-footer {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: stretch;
-            background-color: var(--color-background);
-            border-top: 1px solid var(--color-border-light-2);
+            margin-top: 1em;
+
+            button {
+                width: 100%;
+            }
+
         }
     }
 
@@ -71,6 +71,7 @@
         .form-footer {
             display: flex;
             flex-direction: column;
+            gap: 1em;
             align-items: stretch;
         }
     }
