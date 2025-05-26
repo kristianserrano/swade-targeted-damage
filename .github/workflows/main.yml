@@ -24,7 +24,7 @@ jobs:
         changelog: https://github.com/${{github.repository}}/blob/main/CHANGELOG.md
         readme: https://github.com/${{github.repository}}/blob/main/README.md
         bugs: https://github.com/${{github.repository}}/issues
-        flags: null
+        flags: ''
 
     # Create a zip file with all files required by the module to add to the release
     - run: zip -r ./module.zip module.json LICENSE CHANGELOG.md README.md languages/ modules/ styles/ templates/
