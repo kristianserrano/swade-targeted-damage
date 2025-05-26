@@ -1,0 +1,27 @@
+{
+  "name": "swade-targeted-damage",
+  "version": "1.0.0",
+  "description": "## How to Use This Module",
+  "homepage": "https://github.com/kristianserrano/swade-targeted-damage#readme",
+  "bugs": {
+    "url": "https://github.com/kristianserrano/swade-targeted-damage/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kristianserrano/swade-targeted-damage.git"
+  },
+  "license": "ISC",
+  "author": "Kristian Serrano",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "createLink": "bash ./tools/createLink.sh",
+    "fvttLaunch-v12": "bash ./tools/fvttLaunch-v12.sh",
+    "fvttLaunch-v13": "bash ./tools/fvttLaunch-v13.sh",
+    "packLDB": "node ./tools/packLDB.mjs",
+    "unpackLDB": "node ./tools/unpackLDB.mjs"
+  },
+  "devDependencies": {
+    "@foundryvtt/foundryvtt-cli": "^1.1.0"
+  }
+}

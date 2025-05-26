@@ -1,2 +1,4 @@
 .DS_STORE
 *.lock
+node_modules
+tools/fvttLaunch*.sh
