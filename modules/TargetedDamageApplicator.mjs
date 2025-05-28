@@ -353,7 +353,7 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
                 const activeAssignedPlayer = game.users.find((u) => u.active && u.character?.id === target.actor.id);
                 const activePlayerOwners = game.users.filter((u) => !u.isGM && u.active && (target.actor.ownership[u.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER || target.actor.ownership.default === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER));
 
-                if (activeAssignedPlayer || activePlayerOwners.length || target.actor.ownership.default === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
+                if (activeAssignedPlayer || activePlayerOwners.length) {
                     // If there's multiple player owners.
                     if (!activeAssignedPlayer && game.user.isGM && (activePlayerOwners.length > 1 || target.actor.ownership.default === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) {
                         const buttons = [];
@@ -384,16 +384,22 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
                         const playerOwner = !!activeAssignedPlayer ? activeAssignedPlayer : activePlayerOwners[0];
 
                         if (playerOwner === game.user) {
-                            await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
+                            await new TargetedDamageApplicator({token: target.document,
+                                damage,
+                                ap}).render(true);
                         } else {
                             TargetedDamageApplicator.promptOtherUser(target.document.uuid, playerOwner, damage, ap);
                         }
                     }
                 } else if (game.user.isGM) {
-                    await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
+                    await new TargetedDamageApplicator({token: target.document,
+                        damage,
+                        ap}).render(true);
                 }
             } else if (game.user.isGM) {
-                await new TargetedDamageApplicator(target.document.uuid, damage, ap).render(true);
+                await new TargetedDamageApplicator({token: target.document,
+                    damage,
+                    ap}).render(true);
             } else {
                 TargetedDamageApplicator.promptOtherUser(target.document.uuid, game.users.activeGM, damage, ap);
             }

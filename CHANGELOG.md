@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v3.0.2
+
+- Fixes a bug in which data was not being passed into the constructor in the correct format.
+
 ## v3.0.1
 
 - Places damage details inside of an expandable details element.
