@@ -9,6 +9,10 @@
             "Name": "Hide Target's Defense Values",
             "Hint": "Excludes the Target's defense values (Toughness and Armor) from the results Chat Message."
         },
+        "AutoIlluminationPenalties": {
+            "Name": "Automatic Illumination Penalties",
+            "Hint": "Enables automatic inclusion of Illumination Penalties for Trait rolls based on the current Scene's global illumination and darkness settings as well as the Token's light source."
+        },
         "ChoosePlayer": {
             "Title": "Targeted Damage: Choose a Player",
             "Prompt": "<p>Select the player manage the damage for {name}.</p>"

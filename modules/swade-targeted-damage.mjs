@@ -14,6 +14,15 @@ Hooks.on('init', () => {
         default: false,
     });
 
+    game.settings.register(MODULE_ID, 'auto-illumination-penalties', {
+        name: game.i18n.localize('SWADETargetedDamage.AutoIlluminationPenalties.Name'),
+        hint: game.i18n.localize('SWADETargetedDamage.AutoIlluminationPenalties.Hint'),
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true,
+    });
+
     CONFIG.queries[`${MODULE_ID}.renderTargetedDamageApp`] = TargetedDamageApplicator.renderTargetedDamageApp;
 });
 
@@ -109,10 +118,12 @@ const swadePreRollHookEvents = ['swadePreRollSkill', 'swadePreRollAttribute'];
 
 for (const hookEvent of swadePreRollHookEvents) {
     Hooks.on(hookEvent, (actor, skill, roll, modifiers, options) => {
-        const token = game.scenes.current.tokens.find((t) => t.actorId === actor.id);
-        const illuminationModifier = game.scenes.current.getFlag('swade-targeted-damage', 'illumination');
+        if (!game.settings.get('swade-targeted-damage', 'auto-illumination-penalties')) return;
 
-        if (token && illuminationModifier) {
+        const illuminationModifier = game.scenes.current.getFlag('swade-targeted-damage', 'illumination');
+        const token = game.scenes.current.tokens.find((t) => t.actorId === actor.id);
+
+        if (illuminationModifier && token) {
             const hasBrightLight = token.light.bright > 0;
             const hasDimLight = token.light.dim > 0;
 
