@@ -78,3 +78,47 @@ Hooks.on('renderChatMessageHTML', (message, html, context) => {
     }
 
 });
+
+Hooks.on('preUpdateScene', (scene, changed, options, userId) => {
+    if (game.userId !== userId) return;
+
+    if (!changed.tokenVision) {
+        changed['flags.swade-targeted-damage.illumination'] = null;
+        return;
+    }
+
+    const pitchBlack = changed.environment.globalLight.darkness.max;
+    const illuminationRollModifiers = CONFIG.SWADE.prototypeRollGroups.find((rollGroup) => rollGroup.name === game.i18n.localize('SWADE.Illumination._name'))?.modifiers;
+    const darknessLevel = changed.environment.darknessLevel;
+    let illuminationMod;
+
+    if (darknessLevel >= pitchBlack || !changed.environment.globalLight.enabled) {
+        illuminationMod = illuminationRollModifiers.find((m) => m.label = game.i18n.localize('SWADE.Illumination.Pitch'));
+    } else if (darknessLevel >= pitchBlack / 2) {
+        illuminationMod = illuminationRollModifiers.find((m) => m.label = game.i18n.localize('SWADE.Illumination.Dark'));
+    } else if (darknessLevel >= 0.05) {
+        illuminationMod = illuminationRollModifiers.find((m) => m.label = game.i18n.localize('SWADE.Illumination.Dim'));
+    } else {
+        illuminationMod = null;
+    }
+
+    changed['flags.swade-targeted-damage.illumination'] = illuminationMod;
+});
+
+const swadePreRollHookEvents = ['swadePreRollSkill', 'swadePreRollAttribute'];
+
+for (const hookEvent of swadePreRollHookEvents) {
+    Hooks.on(hookEvent, (actor, skill, roll, modifiers, options) => {
+        const token = game.scenes.current.tokens.find((t) => t.actorId === actor.id);
+        const illuminationModifier = game.scenes.current.getFlag('swade-targeted-damage', 'illumination');
+
+        if (token && illuminationModifier) {
+            const hasBrightLight = token.light.bright > 0;
+            const hasDimLight = token.light.dim > 0;
+
+            if (!hasBrightLight && !hasDimLight) {
+                modifiers.push(illuminationModifier);
+            }
+        }
+    });
+}
