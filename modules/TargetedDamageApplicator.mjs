@@ -159,13 +159,15 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
         }
 
         // Output chat message.
-        await this.outputChat(message); this.close();
+        await this.outputChat(message);
+        this.close();
     }
 
     static async onNoDamage(event, target) {
         // Output chat message.
         const message = game.i18n.format("SWADETargetedDamage.Result.NoSignificantDamage", { name: this.actor.name });
-        await this.outputChat(message); this.close();
+        await this.outputChat(message);
+        this.close();
     }
 
     async refreshObject() {
