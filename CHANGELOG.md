@@ -5,7 +5,7 @@
 - **New Feature - Suggested Illumination Penalties (Beta):** Adds inclusion of Illumination Penalties to Trait rolls based on the current Scene's global illumination settings and darkness levels as well any Dim lighting the Token is currently in.
   - The calculation for Dim, Darkness, and Pitch Dark is based on the Global Illumination Threshold Setting on the Scene. If the Scene's current darkness level is greater than or equal to the threshold, it's considered Pitch Dark. Dim is applied if there's any amount of darkness on the scene (0.05). Darkness starts at half the threshold value.
   - The penalty can be overridden in the Roll Dialog to account for a variety of circumstances in which the penalty might be lessened or not apply at all.
-  - This feature is disabled by default and can be disabled in the module's settings.
+  - This feature is disabled by default and can be enabled in the module's settings.
   - If you run into any issues with this feature or have suggestions for improvements, please submit an issue on [GitHub](https://github.com/kristianserrano/swade-targeted-damage/issues).
 
 ## v3.0.2
