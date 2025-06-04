@@ -19,6 +19,20 @@
                 "GlobalIllumination": "(Global Illumination)"
             }
         },
+        "IlluminationThresholds": {
+            "DimLight": {
+                "Hint": "A darkness threshold between 0.05 and 0.9. When the Scene darkness level exceeds this threshold Global Illumination is considered at least to be Dim Light when determining Illumination penalties.",
+                "Label": "Dim Light Threshold"
+            },
+            "Darkness": {
+                "Hint": "A darkness threshold between 0.1 and 0.95. When the Scene darkness level exceeds this threshold Global Illumination is considered at least to be Darkness when determining Illumination penalties.",
+                "Label": "Darkness Threshold"
+            },
+            "PitchDark": {
+                "Hint": "A darkness threshold between 0.15 and 1. When the Scene darkness level exceeds this threshold Global Illumination is disabled and considered to be Pitch Dark when determining Illumination penalties.",
+                "Label": "Pitch Dark Threshold"
+            }
+        },
         "ChoosePlayer": {
             "Title": "Targeted Damage: Choose a Player",
             "Prompt": "<p>Select the player manage the damage for {name}.</p>"

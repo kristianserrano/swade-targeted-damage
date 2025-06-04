@@ -21,6 +21,7 @@ Hooks.on('init', () => {
         config: true,
         type: Boolean,
         default: true,
+        requireReload: true,
     });
 
     CONFIG.queries[`${MODULE_ID}.renderTargetedDamageApp`] = TargetedDamageApplicator.renderTargetedDamageApp;
@@ -83,49 +84,139 @@ Hooks.on('renderChatMessageHTML', (message, html, context) => {
 
 });
 
+Hooks.on('renderSceneConfig', (app, html, context, options) => {
+    if (!options.parts?.includes('lighting') || !game.settings.get(MODULE_ID, 'auto-illumination-penalties')) return;
+
+    const illuminationThresholds = [
+        {
+            key: 'dim-light-threshold',
+            label: game.i18n.localize('SWADE.Illumination.Dim')
+        },
+        {
+            key: 'darkness-threshold',
+            label: game.i18n.localize('SWADE.Illumination.Dark'),
+        }
+    ];
+
+    for (const threshold of illuminationThresholds) {
+        const isDim = threshold.key === 'dim-light-threshold';
+        const name = `flags.${MODULE_ID}.${threshold.key}`;
+        const pitchDarkGroup = html.querySelector(`.form-group:has(label[for="${app.id}-environment.globalLight.darkness.max"]`);
+        const min = isDim ? 0.05 : 0.1;
+        const max = isDim ? 0.9 : 0.95;
+        const input = foundry.applications.elements.HTMLRangePickerElement.create({
+            name,
+            value: app.document.getFlag(MODULE_ID, threshold.key) ?? min,
+            step: 0.05,
+            max,
+            min,
+            id: `${app.id}-${name}`
+        });
+
+        const group = foundry.applications.fields.createFormGroup({
+            input,
+            label: isDim ? game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.DimLight.Label') : game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.Darkness.Label'),
+            localize: true
+        });
+
+        group.querySelector('label').setAttribute('for', input.id);
+        let p = document.createElement('p');
+        p.innerText = isDim ? game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.DimLight.Hint') : game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.Darkness.Hint');
+        p.classList.add('hint');
+        group.insertAdjacentElement('beforeend', p);
+
+        function adjustThresholds(event) {
+            const step = Number(event.target.getAttribute('step'));
+            // Get the input's new value
+            const newValue = Number(event.target.querySelector('input').value);
+            // Get the range pickers
+            const dimLightRangePicker = html.querySelector(`range-picker[name="flags.${MODULE_ID}.dim-light-threshold"]`);
+            const darknessRangePicker = html.querySelector(`range-picker[name="flags.${MODULE_ID}.darkness-threshold"]`);
+            const pitchDarkRangePicker = pitchDarkGroup.querySelector('range-picker');
+            // Get the current values from each threshold setting
+            const dimLightValue = Number(dimLightRangePicker.querySelector('input').value);
+            const darknessValue = Number(darknessRangePicker.querySelector('input').value);
+            const pitchDarkValue = Number(pitchDarkGroup.querySelector('input').value);
+            const newHigherValue = Math.round((newValue + step) * 20) / 20;
+            const newLowerValue = Math.round((newValue - step) * 20) / 20;
+
+            function makeChange(rangePicker, changedValue) {
+                for (const rangeInput of rangePicker.querySelectorAll('input')) {
+                    rangeInput.value = changedValue;
+                }
+                const rangeInput = rangePicker.querySelector('input');
+                const name = rangePicker.name;
+                const value = changedValue;
+                const max = Number(rangeInput.max);
+                const min = Number(rangeInput.min);
+                const step = Number(rangeInput.step);
+                const id = rangePicker.id;
+                rangePicker.replaceWith(foundry.applications.elements.HTMLRangePickerElement.create({ name, value, step, max, min, id }));
+                console.dir(rangePicker);
+                const newRangePicker = html.querySelector(`range-picker[name="${name}"]`);
+                newRangePicker.addEventListener('change', (event) => adjustThresholds(event));
+                newRangePicker.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (event.target.name.includes('dim-light-threshold')) {
+                if (darknessValue <= newValue) makeChange(darknessRangePicker, newHigherValue);
+            } else if (event.target.name.includes('darkness-threshold')) {
+                if (pitchDarkValue <= newValue) makeChange(pitchDarkRangePicker, newHigherValue);
+                if (dimLightValue >= newValue) makeChange(dimLightRangePicker, newLowerValue);
+            } else if (event.target.name.includes('global')) {
+                if (darknessValue >= newValue) makeChange(darknessRangePicker, newLowerValue);
+            }
+        }
+
+        input.addEventListener('change', (event) => adjustThresholds(event));
+        pitchDarkGroup.querySelector('range-picker')?.addEventListener('change', (event) => adjustThresholds(event));
+        pitchDarkGroup.querySelector('label').innerText = game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.PitchDark.Label');
+        p = document.createElement('p');
+        p.classList.add('hint');
+        p.innerText = game.i18n.localize('SWADETargetedDamage.IlluminationThresholds.PitchDark.Hint');
+        pitchDarkGroup.querySelector('p').replaceWith(p);
+        pitchDarkGroup.insertAdjacentElement("beforebegin", group);
+    }
+});
+
 for (const hookEvent of ['swadePreRollSkill', 'swadePreRollAttribute']) {
     Hooks.on(hookEvent, (actor, skill, roll, modifiers, options) => {
         // Ignore all of this if the feature is disabled in settings.
-        if (!game.settings.get('swade-targeted-damage', 'auto-illumination-penalties')) return;
+        if (!game.settings.get(MODULE_ID, 'auto-illumination-penalties')) return;
 
         // Get the system's Illumination roll modifiers.
         const illuminationRollModifiers = foundry.utils.deepClone(CONFIG.SWADE.prototypeRollGroups.find((rollGroup) => rollGroup.name === game.i18n.localize('SWADE.Illumination._name'))?.modifiers);
-        const token = game.scenes.current.tokens.find((t) => t.actorId === actor.id);
         // Get the tokens that the user is targeting.
         // Check each one using the same script for the actor's token but label them as (Target) instead.
         const targetedTokenIDs = game.user.targets.ids;
         // If there's a token associated with this actor, get its contextual darkness level; this includes scene region contexts. Otherwise, use the scene's current global darkness level.
-        const sceneIllumination = canvas.effects.getDarknessLevel(token?.getSnappedPosition());
-        // Get the scene's Pitch Dark Threshold (Global Illumination Threshold in FVTT terms).
+        const token = game.scenes.current.tokens.find((t) => t.actorId === actor.id);
+        const sceneDarknessLevel = canvas.effects.getDarknessLevel(token?.position);
+        // Get the scene's thresholds for Dim Light, Darkness, and Pitch Dark (Global Illumination Threshold in FVTT terms).
         const pitchDarkLevel = game.scenes.current.environment.globalLight.darkness.max;
-        const formInputStep = 0.05;
-
-        // This function fixes floating point decimals and rounds to the nearest step in possible darkness values.
-        function roundToNearestStep(number) {
-            return Math.round(number * 20) / 20;
-        }
-
+        const dimLevel = Number(game.scenes.current.getFlag(MODULE_ID, 'dim-light-threshold'));
+        const darknessLevel = Number(game.scenes.current.getFlag(MODULE_ID, 'darkness-threshold'));
         // Add darkness level ranges to each Illumination modifiers.
         const dimIlluminationModifier = illuminationRollModifiers?.find((m) => m.label === game.i18n.localize('SWADE.Illumination.Dim'));
-        dimIlluminationModifier.levels = {
-            max: roundToNearestStep((pitchDarkLevel / 2) - formInputStep),
-            min: 0.05
-        };
+        dimIlluminationModifier.threshold = dimLevel;
         const darknessIlluminationModifier = illuminationRollModifiers?.find((m) => m.label === game.i18n.localize('SWADE.Illumination.Dark'));
-        darknessIlluminationModifier.levels = {
-            max: roundToNearestStep(pitchDarkLevel - formInputStep),
-            min: roundToNearestStep(pitchDarkLevel / 2),
-        };
+        darknessIlluminationModifier.threshold = darknessLevel;
         const pitchDarkIlluminationModifier = illuminationRollModifiers?.find((m) => m.label === game.i18n.localize('SWADE.Illumination.Pitch'));
-        pitchDarkIlluminationModifier.levels = {
-            max: 1,
-            min: pitchDarkLevel
-        };
+        pitchDarkIlluminationModifier.threshold = pitchDarkLevel;
         // Get an illumination modifier based on the scene's current darkness level.
-        const sceneIlluminationModifier = illuminationRollModifiers.find((m) => sceneIllumination >= m.levels.min && sceneIllumination <= m.levels.max);
+        //const sceneIlluminationModifier = illuminationRollModifiers.find((m) => sceneDarknessLevel > m.levels.min && sceneDarknessLevel <= m.levels.max);
+        const sceneIlluminationModifier = illuminationRollModifiers.reduce((maxModifier, currentModifier) => {
+            if (sceneDarknessLevel > currentModifier.threshold) {
+                if (!maxModifier || currentModifier.threshold > maxModifier.threshold) {
+                    return currentModifier;
+                }
+            }
+
+            return sceneDarknessLevel > dimLevel ? maxModifier : null;
+        });
 
         // If there's a darkness level set, and there's the Actor's token to consider, begin evaluating its own light source as well as nearby light sources.
-        if (sceneIllumination > 0 && sceneIlluminationModifier && (token || targetedTokenIDs.length)) {
+        if (sceneDarknessLevel > 0 && sceneIlluminationModifier && (token || targetedTokenIDs.length)) {
             // This function determines what kind of illumination from nearby light sources the token is in.
             function getProximityLight(token) {
                 let c = Object.values(token.object.center);
