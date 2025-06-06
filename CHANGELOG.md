@@ -1,5 +1,9 @@
 # SWADE Targeted Damage
 
+## v3.1.1
+
+- Removes Suggested Illumination Penalties feature, which is now split off into its own module, [SWADE Illuminator](https://foundryvtt.com/packages/swade-illuminator)!
+
 ## v3.1.0
 
 - **New Feature - Suggested Illumination Penalties (Beta):** Adds inclusion of Illumination Penalties to Trait rolls based on the current Scene's global illumination settings and darkness levels as well any Dim lighting the Token is currently in.
