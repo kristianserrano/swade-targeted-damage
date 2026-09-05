@@ -1,5 +1,12 @@
 # SWADE Targeted Damage
 
+## v3.1.2
+
+- **Requires FoundryVTT v14 and SWADE system v6.0.0 or higher.**
+- Fixes an issue where Calculate Wounds could fail due to an incorrect reference to the current targets.
+- Fixes an issue where Vehicle Toughness/Armor values weren't read correctly when applying damage.
+- Fixes an issue where the Incapacitated status effect could fail to apply, or throw an error, when damage was applied to an actor that was already Incapacitated.
+
 ## v3.1.1
 
 - Removes Suggested Illumination Penalties feature, which is now split off into its own module, [SWADE Illuminator](https://foundryvtt.com/packages/swade-illuminator)!
