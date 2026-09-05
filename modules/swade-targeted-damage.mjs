@@ -61,7 +61,7 @@ Hooks.on('renderChatMessageHTML', (message, html, context) => {
 
         html.querySelector('.swade-roll-message button.calculate-wounds')?.addEventListener('click', async () => {
             // Collect the user's Targets
-            const targets = context.user.targets;
+            const targets = game.user.targets;
 
             // If there are targets, get the damage and ap, and trigger the flow with the data.
             if (targets.size) {

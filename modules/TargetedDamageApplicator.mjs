@@ -193,22 +193,16 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
 
     // for applying the Incapacitated Status Effect
     async applyIncapacitated() {
-        // Check if they're already Incapacitated; we don't need to add another instance if so.
-        const isIncapacitated = this.actor.effects.some((e) => e.name === game.i18n.localize('SWADE.Incap'));
-
-        // If there is not such Status Effect, then apply it.
+        const isIncapacitated = this.actor.system.status.isIncapacitated;
         if (!isIncapacitated) {
-            const data = CONFIG.SWADE.statusEffects.find((s) => s.id === 'incapacitated');
-            await this.actor.toggleActiveEffect(data, { active: true });
+            await this.actor.toggleActiveEffect('incapacitated', { active: true });
         }
     }
 
     async applyShaken() {
         const isShaken = this.actor.system.status.isShaken;
-
         if (!isShaken) {
-            const data = CONFIG.SWADE.statusEffects.find(s => s.id === 'shaken');
-            await this.actor.toggleActiveEffect(data, { active: true });
+            await this.actor.toggleActiveEffect('shaken', { active: true });
         }
     }
 
@@ -279,8 +273,8 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
 
         // If the Actor is a vehicle, get appropriate values.
         if (this.actor.type === "vehicle") {
-            armor = Number(actor.system.toughness.armor);
-            value = Number(actor.system.toughness.total);
+            armor = Number(this.actor.system.toughness.armor);
+            value = Number(this.actor.system.toughness.total);
         }
 
         // AP vs Armor
