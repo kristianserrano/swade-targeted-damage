@@ -193,7 +193,7 @@ export class TargetedDamageApplicator extends HandlebarsApplicationMixin(Applica
 
     // for applying the Incapacitated Status Effect
     async applyIncapacitated() {
-        const isIncapacitated = this.actor.effects.some((e) => e.id === 'incapacitated');
+        const isIncapacitated = this.actor.system.status.isIncapacitated;
         if (!isIncapacitated) {
             await this.actor.toggleActiveEffect('incapacitated', { active: true });
         }
