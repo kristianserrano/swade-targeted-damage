@@ -16,7 +16,7 @@
   "main": "index.js",
   "scripts": {
     "createLink": "bash ./tools/createLink.sh",
-    "fvttLaunch-v12": "bash ./tools/fvttLaunch-v12.sh",
+    "fvttLaunch-v14": "bash ./tools/fvttLaunch-v14.sh",
     "fvttLaunch-v13": "bash ./tools/fvttLaunch-v13.sh",
     "packLDB": "node ./tools/packLDB.mjs",
     "unpackLDB": "node ./tools/unpackLDB.mjs"
